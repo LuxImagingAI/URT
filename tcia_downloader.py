@@ -36,7 +36,7 @@ if not os.path.exists(output_file):
 
     data = nbia.getSeries(collection = collection, api_url = api_url)
     #if not path.exists(temp_dir):
-    nbia.downloadSeries(data, number = 1, path=temp_dir, format="csv", csv_filename=path.join(temp_dir, "metadata"), api_url = api_url)
+    nbia.downloadSeries(data, path=temp_dir, format="csv", csv_filename=path.join(temp_dir, "metadata"), api_url = api_url)
     #else:
     #    print("Data already downloaded")
 
