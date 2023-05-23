@@ -32,9 +32,18 @@ if not os.path.exists(temp_dir):
 
 if not os.path.exists(output_file):
     if api_url == "restricted":
-        nbia.getToken(user=user, password=password, api_url = api_url)
+        nbia.getToken(user=user, pw=password, api_url = api_url)
+
 
     data = nbia.getSeries(collection = collection, api_url = api_url)
+
+    if data==None:
+        available_collections = nbia.getCollections(api_url = api_url)
+        print(f"Collection \"{collection}\" not found. Available collections are:")
+        for i in available_collections:
+            print(i)
+        raise AssertionError("Collection not found.")
+
     #if not path.exists(temp_dir):
     nbia.downloadSeries(data, path=temp_dir, format="csv", csv_filename=path.join(temp_dir, "metadata"), api_url = api_url)
     #else:
