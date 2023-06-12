@@ -10,7 +10,7 @@
 conda activate tcia_downloader
 
 # Name of the collection
-collection="CPTAC-SAR"
+collection="QIN GBM Treatment Response"
 
 # Output directory of the final .tar.xz archive
 output=$SCRATCH
@@ -24,6 +24,6 @@ user=""
 # Password for TCIA
 password=""
 
-python tcia_downloader.py --collection $collection --output $output --temp_dir $temp_dir #--user $user --password $password
+python tcia_downloader.py --collection "$collection" --output "$output" --temp_dir "$temp_dir" #--user "$user" --password "$password"
 
 
