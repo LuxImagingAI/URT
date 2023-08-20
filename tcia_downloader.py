@@ -66,7 +66,7 @@ def download_series(series, temp_dir, collection_name, api_url):
             rename_patients(temp_dir, series)
             return
         else:
-            if i>0:
+            if i>1:
                 message = f"Retrying download of instances that failed previously (attempt no. {i})"
                 warnings.warn(message)
                 time.sleep(5)
@@ -112,7 +112,7 @@ def main():
 
     else:    
         if api_url == "restricted":
-            nbia.getToken(user=user, pw=password, api_url = api_url)
+            nbia.getToken(user=user, pw=password)
 
 
         series = nbia.getSeries(collection = collection_name, api_url = api_url)
