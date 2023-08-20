@@ -17,10 +17,10 @@ the directory where the data is stored temporarily, e.g. for downloading (before
 The username of a TCIA acount. Needed when restricted collections are accessed.
 
 
---password
+--password:
 The password of a TCIA acount. Needed when restricted collections are accessed.
 
---mode
+--mode:
 The mode of the downloader. Can be either 'nbia' or 'aspera'. Default is 'nbia'. (not implemented yet)
 
 ## The tcia_downloader_hpc.sh file
