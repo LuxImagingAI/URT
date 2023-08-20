@@ -48,7 +48,7 @@ def remove_downloaded_instances(series, temp_dir):
     if not difference_df.empty:
         for index, row in difference_df.iterrows():
             pruned_entry = row["SeriesInstanceUID"]
-            print(f"Skipping instance {pruned_entry}: already downloaded")
+            #print(f"Skipping instance {pruned_entry}: already downloaded")
                 
     return meta_data_df_pruned.to_dict(orient='records')
 
