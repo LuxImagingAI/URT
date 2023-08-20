@@ -2,7 +2,7 @@
 #SBATCH -J TCIA_Downloader
 #SBATCH -N 1
 #SBATCH --ntasks-per-node=1
-#SBATCH -c 128                 
+#SBATCH -c 8                 
 #SBATCH --time=0-36:00:00
 #SBATCH -p batch
 
