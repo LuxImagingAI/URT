@@ -19,11 +19,19 @@ def rename_patients(folder, series):
             if not entry_df.empty:
                 patient_id = entry_df["PatientID"].values[0]
                 date = str(datetime.strptime(entry_df["SeriesDate"].values[0], "%Y-%m-%d %H:%M:%S.%f").date().strftime("%d-%m-%Y"))
+
+                SeriesInstanceUID = entry_df["SeriesInstanceUID"].values[0]
+                SeriesInstanceUID = SeriesInstanceUID[-5:]
+                StudyInstanceUID = entry_df["StudyInstanceUID"].values[0]
+                StudyInstanceUID = StudyInstanceUID[-5:]
+                SeriesDescription = entry_df["SeriesDescription"].values[0]
+                SeriesNumber = entry_df["SeriesNumber"].values[0]
+                
                 dicom_tag = nbia.getDicomTags(seriesUid=dir, format="df")
                 study_desription = dicom_tag[dicom_tag["name"]=="Study Description"]["data"].values[0]
-                
+
                 old_path = os.path.join(root, dir)
-                new_path = os.path.join(root, patient_id, f"{date}-{study_desription}", dir)
+                new_path = os.path.join(root, patient_id, f"{date}-{study_desription}-{StudyInstanceUID}", f"{SeriesNumber}-{SeriesDescription}-{SeriesInstanceUID}")
                 
                 # to avoid recreation of the folder due to multiple runs
                 if not patient_id in old_path:
