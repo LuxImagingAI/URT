@@ -5,7 +5,7 @@ import subprocess, os
 import pandas as pd
 import time
 import warnings
-
+from datetime import datetime
 
 def rename_patients(folder, series):
     print("Renaming folders to patient id")
@@ -18,12 +18,16 @@ def rename_patients(folder, series):
             # if the directory is a SeriesInstanceUID: move it to the patient folder
             if not entry_df.empty:
                 patient_id = entry_df["PatientID"].values[0]
+                date = str(datetime.strptime(entry_df["SeriesDate"].values[0], "%Y-%m-%d %H:%M:%S.%f").date().strftime("%d-%m-%Y"))
+                dicom_tag = nbia.getDicomTags(seriesUid=dir, format="df")
+                study_desription = dicom_tag[dicom_tag["name"]=="Study Description"]["data"].values[0]
+                
                 old_path = os.path.join(root, dir)
-                new_path = os.path.join(root, patient_id, dir)
+                new_path = os.path.join(root, patient_id, f"{date}-{study_desription}", dir)
                 
                 # to avoid recreation of the folder due to multiple runs
                 if not patient_id in old_path:
-                    os.makedirs(os.path.join(root, patient_id), exist_ok=True)
+                    os.makedirs(new_path, exist_ok=True)
                     os.rename(old_path, new_path)
                 
 
