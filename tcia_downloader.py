@@ -73,25 +73,29 @@ def check_collection(series, collection_name, api_url):
         raise AssertionError("Collection not found.")
 
 def getSOPInstanceUIDs(SeriesInstanceUID, token, session):
-    api_call_headers = {'Authorization': 'Bearer ' + token}
 
-    sop_url = "https://services.cancerimagingarchive.net/nbia-api/services/v2/getSOPInstanceUIDs?SeriesInstanceUID="
-    sop_url = sop_url + SeriesInstanceUID
     if token == None:
+        sop_url = "https://services.cancerimagingarchive.net/nbia-api/services/v1/getSOPInstanceUIDs?SeriesInstanceUID="
+        sop_url = sop_url + SeriesInstanceUID
         data = session.get(url = sop_url, timeout=10)
     else:
+        sop_url = "https://services.cancerimagingarchive.net/nbia-api/services/v2/getSOPInstanceUIDs?SeriesInstanceUID="
+        sop_url = sop_url + SeriesInstanceUID
+        api_call_headers = {'Authorization': 'Bearer ' + token}
         data = session.get(url = sop_url, headers=api_call_headers, timeout=10)
     SOPInstanceUID_list = data.json() # list of dictionaries with {"SOPInstanceUID": SOPInstanceUID}
     return SOPInstanceUID_list
 
 def query_md5(SOPInstanceUID, token, session):
-    api_call_headers = {'Authorization': 'Bearer ' + token}
-    base_url = "https://services.cancerimagingarchive.net/nbia-api/services/v2/getM5HashForImage?SOPInstanceUid="
-    url = base_url + SOPInstanceUID
     
     if token==None:
+        base_url = "https://services.cancerimagingarchive.net/nbia-api/services/v1/getM5HashForImage?SOPInstanceUid="
+        url = base_url + SOPInstanceUID
         data = session.get(url = url, timeout=10)
     else:
+        base_url = "https://services.cancerimagingarchive.net/nbia-api/services/v2/getM5HashForImage?SOPInstanceUid="
+        url = base_url + SOPInstanceUID
+        api_call_headers = {'Authorization': 'Bearer ' + token}
         data = session.get(url = url, headers = api_call_headers, timeout=10)
         
     return data.text
@@ -146,10 +150,8 @@ def compute_md5_folder(folder):
                 
     return hash_dict
 
-def remove_corrupted_series(root_dir, series, token):
+def remove_corrupted_series(root_dir, series, token, session):
     print("Checking for corrupted files")
-    
-    session = requests_cache.CachedSession()
     
     series = pd.DataFrame.from_dict(series)
     hash_dict = compute_md5_folder(root_dir)
@@ -185,32 +187,33 @@ def remove_downloaded_instances(series, temp_dir):
 
 
 def download_series(series, temp_dir, collection_name, api_url, token, exceptions, counter):
-    
-    series_to_download = series
-    
-    # Remove already downloaded instances
-    for i in range(counter.value, 6):
-        # counter ensures that the number of attempts is limited, otherwise killing the process would reset the counter
-        counter.value = i
-        
-        remove_corrupted_series(temp_dir, series, token)
-        series_to_download = remove_downloaded_instances(series_to_download, temp_dir)
-        
-        if len(series_to_download) == 0:
-            # rename folders to patient id if all dowloads were successful
-            rename_patients(temp_dir, series)
-            return
-        else:
-            if i>1:
-                message = f"Retrying download of instances that failed previously (attempt no. {i})"
-                warnings.warn(message)
-                time.sleep(60)
-            nbia.downloadSeries(series_to_download, path=temp_dir, format="csv", csv_filename=path.join(temp_dir, "metadata"), api_url = api_url)
     try:
+        series_to_download = series
+        session = requests_cache.CachedSession()
+        
+        # Remove already downloaded instances
+        for i in range(counter.value, 10):
+            # counter ensures that the number of attempts is limited, otherwise killing the process would reset the counter
+            counter.value = i
+            
+            remove_corrupted_series(temp_dir, series, token, session)
+            series_to_download = remove_downloaded_instances(series_to_download, temp_dir)
+            
+            if len(series_to_download) == 0:
+                # rename folders to patient id if all dowloads were successful
+                rename_patients(temp_dir, series)
+                return
+            else:
+                if i>1:
+                    message = f"Retrying download of instances that failed previously (attempt no. {i})"
+                    warnings.warn(message)
+                    time.sleep(60)
+                nbia.downloadSeries(series_to_download, path=temp_dir, format="csv", csv_filename=path.join(temp_dir, "metadata"), api_url = api_url)
+            
         raise Exception("Download failed. Please check your internet connection and try again.")
+    
     except Exception as e:
-        exceptions.put(e)
-        return
+        exceptions.put(str(e))
     
 def create_signal_handler(processes):
     def signal_handler(signal_number, frame):
@@ -220,6 +223,15 @@ def create_signal_handler(processes):
         sys.exit(0)
     return signal_handler
     
+def generate_tokens(api_url, user, password):
+    if api_url == "restricted":
+        nbia.getToken(user=user, pw=password)
+        token = get_token(user, password)
+        token_expires = datetime.now() + timedelta(hours=1, minutes=50)
+    else:
+        token = None
+        token_expires = datetime.now() + timedelta(weeks=100)
+    return token, token_expires
 
 def main():
     # parse arguments
@@ -259,17 +271,9 @@ def main():
         print("Output file already exists. Skipping download and compression.")
 
     else:    
-        if api_url == "restricted":
-            nbia.getToken(user=user, pw=password)
-            token = get_token(user, password)
-            token_expires = datetime.now() + timedelta(hours=1, minutes=50)
-        else:
-            token = None
-            token_expires = datetime.now() + timedelta(months=1)
-
+        token, token_expires = generate_tokens(api_url, user, password)
 
         series = nbia.getSeries(collection = collection_name, api_url = api_url)
-        
         # check if collection exists
         check_collection(series, collection_name, api_url)
         
@@ -294,7 +298,7 @@ def main():
             
             while datetime.now() < token_expires:
                 if not exceptions.empty():
-                    raise exceptions.get()
+                    raise Exception("Exception from subprocess: ", exceptions.get()) # TODO: print exception
                 elif not download_process.is_alive():
                     finished = True
                     break
@@ -304,9 +308,7 @@ def main():
                 break
             
             print("Token expired. Refreshing token...")
-            nbia.getToken(user=user, pw=password)
-            token = get_token(user, password)
-            token_expires = datetime.now() + timedelta(hours=1, minutes=50)
+            token, token_expires = generate_tokens(api_url, user, password)
             
             
         # compress
@@ -315,7 +317,6 @@ def main():
                 print("Compressing data")
                 command = ["tar", "-I", "pigz",  "-cf", output_file, "-C", args.temp_dir, collection_name, "--remove-files"]
                 subprocess.run(command)
-                #subprocess.run(f'tar -I pigz -cf {output_file} -C {args.temp_dir} {collection_name} --remove-files', shell=True)
             except Exception as e:
                 print(f"An error occurred during compression: {e}")
 
