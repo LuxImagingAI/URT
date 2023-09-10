@@ -1,5 +1,5 @@
 import argparse
-from tcia_utils import nbia
+from utils.tcia import Tcia_api
 from os import path
 import subprocess, os
 import pandas as pd
@@ -13,225 +13,224 @@ import shutil
 import sys
 import signal
 import requests_cache
+import logging
 
-def get_token(user, pw):
-    token_url = "https://keycloak.dbmi.cloud/auth/realms/TCIA/protocol/openid-connect/token"
-    params = {'client_id': 'nbia',
-                    'scope': 'openid',
-                    'grant_type': 'password',
-                    'username': user,
-                    'password': pw
-                    }
+
+class Downloader:
+    def __init__(self, user=None, password=None, root_dir="", tempdir="", collection_name=None, logger=None) -> None:
+        self.logger = logger
+        self.tcia_api = Tcia_api(user=user, pw=password, logger=logger)
+        self.root_dir = root_dir
+        self.temp_dir = tempdir
+        self.collection_name = collection_name
+        self.series_metadata_df = None
+        self.seriesDF = None
     
-    data = requests.post(token_url, data=params)  
-    data.raise_for_status()
-    access_token = data.json()["access_token"]
-    expires_in = data.json()["expires_in"]
-    id_token = data.json()["id_token"]
-    
-    return access_token
-
-    
-def rename_patients(folder, series):
-    print("Renaming folders to patient id")
-    meta_data_df = pd.DataFrame.from_dict(series)
-    
-    for root, dirs, files in os.walk(folder):
-        for dir in dirs:
-            entry_df = meta_data_df[meta_data_df["SeriesInstanceUID"] == dir]
-            
-            # if the directory is a SeriesInstanceUID: move it to the patient folder
-            if not entry_df.empty:
-                patient_id = entry_df["PatientID"].values[0]
-                date = str(datetime.strptime(entry_df["SeriesDate"].values[0], "%Y-%m-%d %H:%M:%S.%f").date().strftime("%d-%m-%Y"))
-
-                SeriesInstanceUID = entry_df["SeriesInstanceUID"].values[0]
-                SeriesInstanceUID = SeriesInstanceUID[-5:]
-                StudyInstanceUID = entry_df["StudyInstanceUID"].values[0]
-                StudyInstanceUID = StudyInstanceUID[-5:]
-                SeriesDescription = entry_df["SeriesDescription"].values[0]
-                SeriesNumber = entry_df["SeriesNumber"].values[0]
-                
-                dicom_tag = nbia.getDicomTags(seriesUid=dir, format="df")
-                study_desription = dicom_tag[dicom_tag["name"]=="Study Description"]["data"].values[0]
-
-                old_path = os.path.join(root, dir)
-                new_path = os.path.join(root, patient_id, f"{date}-{study_desription}-{StudyInstanceUID}", f"{SeriesNumber}-{SeriesDescription}-{SeriesInstanceUID}")
-                
-                # to avoid recreation of the folder due to multiple runs
-                if not patient_id in old_path:
-                    os.makedirs(new_path, exist_ok=True)
-                    os.rename(old_path, new_path)
-                
-
-def check_collection(series, collection_name, api_url):
-    if series==None:
-        available_collections = nbia.getCollections(api_url = api_url)
-        print(f"Collection \"{collection_name}\" not found. Available collections are:")
-        for i in available_collections:
-            print(i)
-        raise AssertionError("Collection not found.")
-
-def getSOPInstanceUIDs(SeriesInstanceUID, token, session):
-
-    if token == None:
-        sop_url = "https://services.cancerimagingarchive.net/nbia-api/services/v1/getSOPInstanceUIDs?SeriesInstanceUID="
-        sop_url = sop_url + SeriesInstanceUID
-        data = session.get(url = sop_url, timeout=10)
-    else:
-        sop_url = "https://services.cancerimagingarchive.net/nbia-api/services/v2/getSOPInstanceUIDs?SeriesInstanceUID="
-        sop_url = sop_url + SeriesInstanceUID
-        api_call_headers = {'Authorization': 'Bearer ' + token}
-        data = session.get(url = sop_url, headers=api_call_headers, timeout=10)
-    SOPInstanceUID_list = data.json() # list of dictionaries with {"SOPInstanceUID": SOPInstanceUID}
-    return SOPInstanceUID_list
-
-def query_md5(SOPInstanceUID, token, session):
-    
-    if token==None:
-        base_url = "https://services.cancerimagingarchive.net/nbia-api/services/v1/getM5HashForImage?SOPInstanceUid="
-        url = base_url + SOPInstanceUID
-        data = session.get(url = url, timeout=10)
-    else:
-        base_url = "https://services.cancerimagingarchive.net/nbia-api/services/v2/getM5HashForImage?SOPInstanceUid="
-        url = base_url + SOPInstanceUID
-        api_call_headers = {'Authorization': 'Bearer ' + token}
-        data = session.get(url = url, headers = api_call_headers, timeout=10)
+    def rename_patients(self, folder):
+        self.logger.info("Renaming folders")
+        #meta_data_df = pd.DataFrame.from_dict(series)
         
-    return data.text
+        for root, dirs, files in os.walk(folder):
+            for dir in dirs:
+                entry_df = self.seriesDF[self.seriesDF["SeriesInstanceUID"] == dir]
+                entry_metadata_df = self.series_metadata_df[self.series_metadata_df["Series UID"] == dir]
+                
+                # if the directory is a SeriesInstanceUID: move it to the patient folder
+                if not entry_df.empty:
+                    patient_id = entry_df["PatientID"].values[0]
+                    date = str(datetime.strptime(entry_df["SeriesDate"].values[0], "%Y-%m-%d %H:%M:%S.%f").date().strftime("%d-%m-%Y"))
 
-def md5(fname):
-    hash_md5 = hashlib.md5()
-    with open(fname, "rb") as f:
-        for chunk in iter(lambda: f.read(4096), b""):
-            hash_md5.update(chunk)
-    return hash_md5.hexdigest()
-
-def query_md5_series(series_df, token, session):
-    SeriesInstanceUID = series_df["SeriesInstanceUID"].values
-    assert(len(SeriesInstanceUID) == 1)
-    SeriesInstanceUID = SeriesInstanceUID[0]
-    
-    SOPInstanceUIDS = getSOPInstanceUIDs(SeriesInstanceUID, token, session)
-    
-    md5_list = []
-    for SOPInstanceUID in SOPInstanceUIDS:
-        md5 = query_md5(SOPInstanceUID["SOPInstanceUID"], token, session)
-        md5_list.append(md5)
-    
-    return md5_list
-    
-def compute_md5_folder(folder):
-    '''
-    Format:
-    
-    hash_dict = {
-        SeriesInstanceUID: {
-            path: path,
-            hash: [md5, ..., md5]
-            },
-    }
-    
-    '''
-    
-    hash_dict = {}
-    
-    for root, dirs, files in os.walk(folder):
-        for file in files:
-            if file.endswith(".dcm"):
-                SeriesInstanceUID = root.split("/")[-1]
-                if not SeriesInstanceUID in hash_dict:
-                    hash_dict[SeriesInstanceUID] = {}
-                    hash_dict[SeriesInstanceUID]["path"] = root
-                    hash_dict[SeriesInstanceUID]["md5"] = []
+                    SeriesInstanceUID = entry_df["SeriesInstanceUID"].values[0]
+                    SeriesInstanceUID = SeriesInstanceUID[-5:]
+                    StudyInstanceUID = entry_df["StudyInstanceUID"].values[0]
+                    StudyInstanceUID = StudyInstanceUID[-5:]
+                    SeriesDescription = entry_df["SeriesDescription"].values[0]
+                    SeriesNumber = entry_df["SeriesNumber"].values[0]
                     
-                file_path = os.path.join(root, file)
-                hash_dict[SeriesInstanceUID]["md5"].append(md5(file_path))
-                
-    return hash_dict
-
-def remove_corrupted_series(root_dir, series, token, session):
-    print("Checking for corrupted files")
-    
-    series = pd.DataFrame.from_dict(series)
-    hash_dict = compute_md5_folder(root_dir)
-    counter = 0
-    
-    for key, value in hash_dict.items():
-        md5_list = query_md5_series(series[series["SeriesInstanceUID"]==key], token, session)
-        if not set(md5_list) == set(value["md5"]):
-            print(f"Corrupted files found in series {key}. Removing...")
-            shutil.rmtree(value["path"])
-            counter += 1
-    
-    print(f"Removed {counter} corrupted series.")
-    return
+                    # dicom_tag = self.tcia_api.getDicomTagsDF(SeriesUID=dir)
+                    # study_desription = dicom_tag[dicom_tag["name"]=="Study Description"]["data"].values[0]
+                    study_desription = entry_metadata_df["Study Description"].values[0]
+                    old_path = os.path.join(root, dir)
+                    new_path = os.path.join(root, patient_id, f"{date}-{study_desription}-{StudyInstanceUID}", f"{SeriesNumber}-{SeriesDescription}-{SeriesInstanceUID}")
+                    
+                    # to avoid recreation of the folder due to multiple runs
+                    if not patient_id in old_path:
+                        os.makedirs(new_path, exist_ok=True)
+                        os.rename(old_path, new_path)
+                    
 
 
-def remove_downloaded_instances(series, temp_dir):
-    meta_data_df = pd.DataFrame.from_dict(series)
-    meta_data_df_pruned = meta_data_df
-    
-    for root, dirs, files in os.walk(temp_dir):
-        for dir in dirs:
-            mask = meta_data_df_pruned["SeriesInstanceUID"] != dir
-            meta_data_df_pruned = meta_data_df_pruned[mask]
-    
-    difference_df = pd.concat([meta_data_df, meta_data_df_pruned]).drop_duplicates(keep=False)
-    if not difference_df.empty:
-        for index, row in difference_df.iterrows():
-            pruned_entry = row["SeriesInstanceUID"]
-            #print(f"Skipping instance {pruned_entry}: already downloaded")
-                
-    return meta_data_df_pruned.to_dict(orient='records')
+
+    def md5(self, fname):
+        hash_md5 = hashlib.md5()
+        with open(fname, "rb") as f:
+            for chunk in iter(lambda: f.read(4096), b""):
+                hash_md5.update(chunk)
+        return hash_md5.hexdigest()
+
+    def query_md5_series(self, series_df):
+        SeriesInstanceUID = series_df["SeriesInstanceUID"].values
+        assert(len(SeriesInstanceUID) == 1)
+        SeriesInstanceUID = SeriesInstanceUID[0]
+        
+        SOPInstanceUIDS = self.tcia_api.getSOPInstanceUIDs(SeriesInstanceUID)
+        
+        md5_list = []
+        for SOPInstanceUID in SOPInstanceUIDS:
+            md5 = self.tcia_api.query_md5(SOPInstanceUID["SOPInstanceUID"])
+            md5_list.append(md5)
+        
+        return md5_list
+        
+    def compute_md5_folder(self, folder):
+        '''
+        Format:
+        
+        hash_dict = {
+            SeriesInstanceUID: {
+                path: path,
+                hash: [md5, ..., md5]
+                },
+        }
+        
+        '''
+        
+        hash_dict = {}
+        
+        for root, dirs, files in os.walk(folder):
+            for file in files:
+                if file.endswith(".dcm"):
+                    SeriesInstanceUID = root.split("/")[-1]
+                    if not SeriesInstanceUID in hash_dict:
+                        hash_dict[SeriesInstanceUID] = {}
+                        hash_dict[SeriesInstanceUID]["path"] = root
+                        hash_dict[SeriesInstanceUID]["md5"] = []
+                        
+                    file_path = os.path.join(root, file)
+                    hash_dict[SeriesInstanceUID]["md5"].append(self.md5(file_path))
+                    
+        return hash_dict
+
+    def remove_corrupted_series(self, dir, series):
+        if len(os.listdir(dir))==0:
+            return
+        else:
+            self.logger.info("Checking for corrupted files")
+            
+            series = pd.DataFrame.from_dict(series)
+            hash_dict = self.compute_md5_folder(dir)
+            counter = 0
+            
+            for key, value in hash_dict.items():
+                md5_list = self.query_md5_series(series[series["SeriesInstanceUID"]==key])
+                if not set(md5_list) == set(value["md5"]):
+                    self.logger.warning(f"Corrupted files found in series {key}. Removing...")
+                    shutil.rmtree(value["path"])
+                    counter += 1
+                else:
+                    self.logger.debug(f"Series {key} is ok.")
+            
+            self.logger.info(f"Removed {counter} corrupted series.")
+            return
 
 
-def download_series(series, temp_dir, collection_name, api_url, token, exceptions, counter):
-    try:
-        series_to_download = series
-        session = requests_cache.CachedSession()
+    def remove_downloaded_instances(self, series, temp_dir):
+        self.logger.info("Checking for already downloaded instances")
+        meta_data_df = pd.DataFrame.from_dict(series)
+        meta_data_df_pruned = meta_data_df
+        
+        for root, dirs, files in os.walk(temp_dir):
+            for dir in dirs:
+                mask = meta_data_df_pruned["SeriesInstanceUID"] != dir
+                meta_data_df_pruned = meta_data_df_pruned[mask]
+        
+        difference_df = pd.concat([meta_data_df, meta_data_df_pruned]).drop_duplicates(keep=False)
+        if not difference_df.empty:
+            for index, row in difference_df.iterrows():
+                pruned_entry = row["SeriesInstanceUID"]
+                self.logger.debug(f"Skipping instance {pruned_entry}: already downloaded")
+        
+        self.logger.info(f"Found {len(difference_df)} already downloaded instances")
+
+        return meta_data_df_pruned
+
+
+    def download_series_metadata(self, csv_filename):
+        self.logger.debug("Downloading metadata")
+        series_metadata_df = self.tcia_api.getSeriesMetadataDF(self.seriesDF)
+        self.series_metadata_df = series_metadata_df
+        series_metadata_df.to_csv(csv_filename, index=False)
+        return
+        
+    def download_series(self):
+        series_to_download = self.seriesDF
         
         # Remove already downloaded instances
-        for i in range(counter.value, 10):
-            # counter ensures that the number of attempts is limited, otherwise killing the process would reset the counter
-            counter.value = i
+        for i in range(1, 10):
+            timeout = (i**2)+5
             
-            remove_corrupted_series(temp_dir, series, token, session)
-            series_to_download = remove_downloaded_instances(series_to_download, temp_dir)
+            self.remove_corrupted_series(self.temp_dir, self.seriesDF)
+            series_to_download = self.remove_downloaded_instances(series_to_download, self.temp_dir)
             
+            # rename folders to patient id if all dowloads were successful
             if len(series_to_download) == 0:
-                # rename folders to patient id if all dowloads were successful
-                rename_patients(temp_dir, series)
                 return
             else:
                 if i>1:
-                    message = f"Retrying download of instances that failed previously (attempt no. {i})"
-                    warnings.warn(message)
-                    time.sleep(60)
-                nbia.downloadSeries(series_to_download, path=temp_dir, format="csv", csv_filename=path.join(temp_dir, "metadata"), api_url = api_url)
+                    self.logger.warning(f"Download failed. Retrying in {timeout} seconds...")
+                    time.sleep(timeout)
+                self.tcia_api.downloadSeries(series_to_download, path=self.temp_dir)
             
         raise Exception("Download failed. Please check your internet connection and try again.")
+
+
+    def run(self):
+
+        # check if collection exists
+        self.tcia_api.check_collection(self.collection_name)
+        
+        # Get series from tcia api as dataframe
+        self.seriesDF = self.tcia_api.getSeriesDF(self.collection_name)
+        
+        # Download series
+        self.download_series()
+        
+        # Download metadata
+        self.download_series_metadata(csv_filename=path.join(self.temp_dir, "metadata.csv"))
+        
+        # Rename patients
+        self.rename_patients(self.temp_dir)
+
+def get_logger(verbosity):
+    logger = logging.getLogger(__name__)
+    logger.propagate = False
+    level = getattr(logging, verbosity)
+    logger.setLevel(logging.DEBUG)
+            
+    formatter = logging.Formatter(fmt ='%(asctime)s %(levelname)s: %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
     
-    except Exception as e:
-        exceptions.put(str(e))
+    stream_handler = logging.StreamHandler()
+    stream_handler.setLevel(level)
+    stream_handler.setFormatter(formatter)
     
-def create_signal_handler(processes):
-    def signal_handler(signal_number, frame):
-        print("Stopping subprocesses...")
-        for process in processes:
-            process.terminate()
-        sys.exit(0)
-    return signal_handler
+    os.makedirs("logs", exist_ok=True)
+    file_handler_info = logging.FileHandler("logs/downloader.log", mode="w")
+    file_handler_info.setLevel(logging.INFO)
+    file_handler_info.setFormatter(formatter)
     
-def generate_tokens(api_url, user, password):
-    if api_url == "restricted":
-        nbia.getToken(user=user, pw=password)
-        token = get_token(user, password)
-        token_expires = datetime.now() + timedelta(hours=1, minutes=50)
-    else:
-        token = None
-        token_expires = datetime.now() + timedelta(weeks=100)
-    return token, token_expires
+    file_handler_debug = logging.FileHandler("logs/downloader_debug.log", mode="w")
+    file_handler_debug.setLevel(logging.DEBUG)
+    file_handler_debug.setFormatter(formatter)
+    
+    if logger.hasHandlers():
+        logger.handlers.clear()
+
+    logger.addHandler(stream_handler)
+    logger.addHandler(file_handler_info)
+    logger.addHandler(file_handler_debug)
+    
+    logger.debug(f"Level of verbosity: {verbosity}")
+    return logger
 
 def main():
     # parse arguments
@@ -242,15 +241,10 @@ def main():
     parser.add_argument('--user', '-u', type=str, default=None, required=False, help='Username for TCIA')
     parser.add_argument('--password', '-p', type=str, default=None, required=False, help='Password for TCIA')
     parser.add_argument('--mode', '-m', type=str, default='nbia', required=False, help='Which downloader to use (nbia, aspera)')
-    parser.add_argument('--compress', '-c', type=bool, default=True, required=False, help='Choose whether to compress the downloaded data. If False, the data will be downloaded only to the temporary directory')
+    parser.add_argument('--compress', '-c', action='store_true', default=False, required=False, help='Choose whether to compress the downloaded data. If False, the data will be downloaded only to the temporary directory')
     parser.add_argument('--bids_format', '-b', type=bool, default=False, required=False, help='Choose whether to convert the downloaded data to BIDS format. If False, the data will be downloaded only to the temporary directory')
+    parser.add_argument('--verbosity', '-v', type=str, default="INFO", required=False, help="Choose the level of verbosity from [DEBUG, INFO, WARNING, ERROR, CRITICAL]. Default is 'INFO'")
     args = parser.parse_args()
-
-    if args.mode != "nbia":
-        raise AssertionError("Only nbia mode is supported at the moment. Future updates will include aspera as well.")
-
-    if args.user == None or args.password == None:
-        print("Warning: No username or password provided. Downloading public data only.")
         
     collection_name = args.collection
     output = args.output
@@ -258,8 +252,20 @@ def main():
     temp_dir = path.join(args.temp_dir, collection_name)
     user = args.user
     password = args.password
-    api_url = "" if user==None else "restricted"
     compress = args.compress
+    verbosity = args.verbosity
+    
+    if not verbosity in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
+        raise Exception("Invalid level of verbosity.")
+    
+    logger = get_logger(verbosity=verbosity)
+        
+    
+    if args.mode != "nbia":
+        raise AssertionError("Only nbia mode is supported at the moment. Future updates will include aspera as well.")
+
+    if user == None or args.password == None:
+        logger.info("No username or password provided. Downloading public data only.")
 
     if not os.path.exists(output):
         os.makedirs(output)
@@ -268,56 +274,21 @@ def main():
         os.makedirs(temp_dir)
 
     if os.path.exists(output_file):
-        print("Output file already exists. Skipping download and compression.")
+        logger.warning("Output file already exists. Skipping download and compression.")
 
     else:    
-        token, token_expires = generate_tokens(api_url, user, password)
-
-        series = nbia.getSeries(collection = collection_name, api_url = api_url)
-        # check if collection exists
-        check_collection(series, collection_name, api_url)
         
-        # Queues for multiprocessing
-        exceptions = mp.Queue()
-        counter = mp.Value("i", 1)
-        
-        # download series
-        finished = False
-        while True:
-            
-            try:
-                download_process.terminate()
-                download_process.wait()
-            except:
-                pass
-            
-            
-            download_process = mp.Process(target=download_series, args=(series, temp_dir, collection_name, api_url, token, exceptions, counter))
-            signal.signal(signal.SIGINT, create_signal_handler([download_process]))
-            download_process.start()
-            
-            while datetime.now() < token_expires:
-                if not exceptions.empty():
-                    raise Exception("Exception from subprocess: ", exceptions.get()) # TODO: print exception
-                elif not download_process.is_alive():
-                    finished = True
-                    break
-                time.sleep(10)
-                
-            if finished:
-                break
-            
-            print("Token expired. Refreshing token...")
-            token, token_expires = generate_tokens(api_url, user, password)
-            
+        downloader = Downloader(user=user, password=password, logger=logger, collection_name=collection_name, root_dir=output, tempdir=temp_dir)
+        downloader.run()
             
         # compress
         if compress:
             try:
-                print("Compressing data")
+                logger.info("Compressing data")
                 command = ["tar", "-I", "pigz",  "-cf", output_file, "-C", args.temp_dir, collection_name, "--remove-files"]
                 subprocess.run(command)
             except Exception as e:
-                print(f"An error occurred during compression: {e}")
+                raise e
+                # logger.error(f"An error occurred during compression: {e}")
 
 main()
