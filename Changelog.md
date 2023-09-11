@@ -5,14 +5,17 @@
 - Added new tcia_api class for handling the api calls
 - Simplified handling of tokens and token renewal
 - Logging via python logging library: better readability and flexibility
+- Logs are stored in the "logs" folder with two different levels of verbosity
 - API queries are now fault tolerant: multiple retries and increasing timeouts
-- Downloader checks data integrity in case of failed downloads and at the end by comparing MD5 hashes for each file
-- GET requests (not carrying large files) are cached to avoid overhead due to the integrity check
+- Downloader checks data integrity using MD5 hashes
+- Checks for already downloaded data: works with renamed and mixed folders as well (if the script was interrupted during renaming)
+- GET requests (not carrying large files) are cached to avoid overhead
+- Removes unkown dicom files: avoids contamination by other datasets
 
 ### Changed
 - Code refactored: better readability
-- Renamed project to CoGMI_downloader
-- Replaced getDicomTag API call with metadata from getSeriesMetadata: less API calls during renaming of the folders
+- Replaced getDicomTag API call with metadata from getSeriesMetadata: substantial reduction of API calls
+- Checks for file corruption are now much faster: removed calls to API (retrieves MD5 hash with image download instead)
 
 ### Removed
 - Multiprocessing: now token renewal is handled in tcia_api

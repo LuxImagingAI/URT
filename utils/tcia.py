@@ -79,7 +79,7 @@ class Tcia_api:
         Only used for requesting tokens
         '''
         data = None
-        self.logger.debug(f"Requesting {url} with params {params}")
+        self.logger.debug(f"Requesting {url}")
         
         for i in range(0, 5):
             timeout = ((i+5)**2)+20
@@ -172,9 +172,12 @@ class Tcia_api:
         return self.getDicomTags(SeriesUID=SeriesUID)
     
     
-    def downloadSeriesInstance(self, SeriesInstanceUID, directory):
+    def downloadSeriesInstance(self, SeriesInstanceUID, directory, md5=True):
         self.logger.info(f"Downloading {SeriesInstanceUID} to {directory}")
-        SeriesInstanceUIDURL = "getImage"
+        if md5:
+            SeriesInstanceUIDURL = "getImageWithMD5Hash"
+        else:
+            SeriesInstanceUIDURL = "getImage"
         url = self.base_url + SeriesInstanceUIDURL
         params = {"SeriesInstanceUID": SeriesInstanceUID}
         data = self.get_request(url=url, params=params, use_session=False)
@@ -183,6 +186,7 @@ class Tcia_api:
         with zipfile.ZipFile(io.BytesIO(data.content)) as zip_file:
             zip_file.extractall(path=path)
         return
+
     
     def downloadSeries(self, series, path):
         assert(isinstance(series, pd.DataFrame))
