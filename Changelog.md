@@ -1,4 +1,9 @@
 # Changelog
+## [0.1.1] - 2023.09.11
+
+### Changed
+- in case no compression is used: the data will be copied to the output folder after downloading
+
 ## [0.1.0] - 2023.09.11
 
 ### Added

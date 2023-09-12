@@ -177,7 +177,7 @@ class Downloader:
                 pruned_entry = row["SeriesInstanceUID"]
                 self.logger.debug(f"Skipping instance {pruned_entry}: downloaded")
         
-        self.logger.info(f"Found {len(difference_df)} downloaded instances")
+        self.logger.info(f"Found {len(difference_df)} downloaded instances in '{temp_dir}'")
 
         return meta_data_df_pruned
 
@@ -280,20 +280,25 @@ def main():
     # parse arguments
     parser = argparse.ArgumentParser(description='Download data from TCIA')
     parser.add_argument('--collection', '-co', type=str, required=True, help='TCIA collection name')
-    parser.add_argument('--output', '-o', type=str, default='', required=False, help='Output directory')
-    parser.add_argument('--temp_dir', '-t', type=str, default='', required=False, help='Temporary directory for downloading')
+    parser.add_argument('--output', '-o', type=str, default='output', required=False, help='Output directory')
+    parser.add_argument('--temp_dir', '-t', type=str, default=None, required=False, help='Temporary directory for downloading')
     parser.add_argument('--user', '-u', type=str, default=None, required=False, help='Username for TCIA')
     parser.add_argument('--password', '-p', type=str, default=None, required=False, help='Password for TCIA')
     parser.add_argument('--mode', '-m', type=str, default='nbia', required=False, help='Which downloader to use (nbia, aspera)')
     parser.add_argument('--compress', '-c', action='store_true', default=False, required=False, help='Choose whether to compress the downloaded data. If False, the data will be downloaded only to the temporary directory')
-    parser.add_argument('--bids_format', '-b', type=bool, default=False, required=False, help='Choose whether to convert the downloaded data to BIDS format. If False, the data will be downloaded only to the temporary directory')
+    parser.add_argument('--bids', '-b', type=bool, default=False, required=False, help='Choose whether to convert the downloaded data to BIDS format. If False, the data will be downloaded only to the temporary directory')
     parser.add_argument('--verbosity', '-v', type=str, default="INFO", required=False, help="Choose the level of verbosity from [DEBUG, INFO, WARNING, ERROR, CRITICAL]. Default is 'INFO'")
     args = parser.parse_args()
         
     collection_name = args.collection
-    output = args.output
+    output = os.path.normpath(args.output)
     output_file = path.join(output, f"{collection_name}.tar.gz")
-    temp_dir = path.join(args.temp_dir, collection_name)
+    
+    if args.temp_dir == None:
+        temp_dir= path.join(args.output, collection_name)
+    else:
+        temp_dir = path.join(args.temp_dir, collection_name)
+        
     user = args.user
     password = args.password
     compress = args.compress
@@ -334,5 +339,9 @@ def main():
             except Exception as e:
                 raise e
                 # logger.error(f"An error occurred during compression: {e}")
+        else:
+            if path.dirname(temp_dir) != output:
+                logger.info(f"Moving data to output directory '{output}'")
+                shutil.move(temp_dir, output)
 
 main()

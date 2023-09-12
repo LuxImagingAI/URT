@@ -5,23 +5,25 @@ Python script with matching slurm bash file for downloading datatasets from the 
 The script takes up to 5 arguments as input:
 
 --collection: 
-the name of the collection which should be downloaded
+The name of the collection which should be downloaded
 
 --output:
-the output directory for the archive
+The output directory for the data
 
 --temp_dir:
-the directory where the data is stored temporarily, e.g. for downloading (before compression). Can be useful in the HPC use case (inode limit)
+The directory where the data is stored temporarily, e.g. for downloading (before compression). Can be useful in the HPC use case (inode limit). If no argument is given the output folder will be used.
 
 --user:
 The username of a TCIA acount. Needed when restricted collections are accessed.
 
-
 --password:
 The password of a TCIA acount. Needed when restricted collections are accessed.
 
+--compression:
+The output folder will be automatically compressed
+
 --mode:
-The mode of the downloader. Can be either 'nbia' or 'aspera'. Default is 'nbia'. (not implemented yet)
+The mode of the downloader. Can be either 'nbia' or 'aspera'. Default is 'nbia'. ('aspera' not implemented yet)
 
 ## The tcia_downloader_hpc.sh file
 This is just a template containing slurm directives. It can therefore be used locally as well as in an HPC environment. Adjust this file according to your application. It can be used as follows:
@@ -37,6 +39,11 @@ using locally:
 
 
 # Changelog
+## [0.1.1] - 2023.09.11
+
+### Changed
+- in case no compression is used: the data will be copied to the output folder after downloading
+
 ## [0.1.0] - 2023.09.11
 
 ### Added
