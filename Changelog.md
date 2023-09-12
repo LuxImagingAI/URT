@@ -1,8 +1,9 @@
 # Changelog
-## [0.1.1] - 2023.09.11
+## [0.1.1] - 2023.09.12
 
 ### Changed
 - in case no compression is used: the data will be copied to the output folder after downloading
+- created folder for example scripts
 
 ## [0.1.0] - 2023.09.11
 
