@@ -24,6 +24,6 @@ user=""
 # Password for TCIA
 password=""
 
-python tcia_downloader.py --collection "$collection" --output "$output" --temp_dir "$temp_dir" #--user "$user" --password "$password"
+python tcia_downloader.py --collection "$collection" --output "$output" --temp_dir "$temp_dir"  --compress #--user "$user" --password "$password"
 
 
