@@ -39,6 +39,12 @@ using locally:
 
 
 # Changelog
+
+## [0.1.2] - 2023.09.13
+
+### Changed
+- fix in token renewal: user and password were not stored in tcia_utils object
+
 ## [0.1.1] - 2023.09.12
 
 ### Changed

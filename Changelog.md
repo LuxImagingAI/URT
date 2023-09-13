@@ -1,8 +1,16 @@
 # Changelog
+
+## [0.1.2] - 2023.09.13
+
+### Changed
+- fix in token renewal: user and password were not stored in tcia_utils object
+
+
 ## [0.1.1] - 2023.09.12
 
 ### Changed
 - in case no compression is used: the data will be copied to the output folder after downloading
+
 
 ## [0.1.0] - 2023.09.11
 

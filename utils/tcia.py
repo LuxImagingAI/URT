@@ -24,6 +24,8 @@ class Tcia_api:
         self.logger = logger
         self.token, self.token_expires = None, None
         self.generate_tokens(user=user, password=pw)
+        self.user = user
+        self.password = pw
     
     def dict_to_dataframe(func):
         def wrapper(*args, **kwargs):
@@ -64,7 +66,7 @@ class Tcia_api:
     def renew_tokens(self):
         if datetime.now() > self.token_expires:
             self.logger.info("Renewing token")
-            self.generate_tokens(user=self.user, pw=self.pw)
+            self.generate_tokens(user=self.user, pw=self.password)
         return
 
     def get_call_headers(self):
