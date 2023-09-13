@@ -1,5 +1,5 @@
 # tcia_downloader [1.1.0]
-Python script with matching slurm bash file for downloading datatasets from the TCIA (The Cancer Imaging Archive). The datasets are directly converted to a compressed archive (tar.xz). Currently suppports the nbia datasets (datasets with limited access not tested yet). Will support the aspera downloader in the future as well.
+Python script with matching slurm bash file for downloading datatasets from the TCIA (The Cancer Imaging Archive) in HPC enivorments, where other methods do not work well. The datasets are directly converted to a compressed archive (tar.xz). Currently suppports the nbia datasets (datasets with limited access not tested yet). Will support the aspera downloader in the future as well.
 
 ## The tcia_downloader.py file
 The script takes up to 5 arguments as input:
