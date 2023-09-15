@@ -1,4 +1,4 @@
-# tcia_downloader [0.1.2]
+# tcia_downloader [0.2.0]
 Python script with matching slurm bash file for downloading datatasets from the TCIA (The Cancer Imaging Archive) in HPC environments, where other methods do not work well. The datasets are directly converted to a compressed archive (tar.xz). Currently suppports the nbia datasets (datasets with limited access not tested yet). Will support the aspera downloader in the future as well.
 
 ## The tcia_downloader.py file
@@ -25,6 +25,9 @@ The output folder will be automatically compressed
 --mode:
 The mode of the downloader. Can be either 'nbia' or 'aspera'. Default is 'nbia'. ('aspera' not implemented yet)
 
+--cache_dir:
+Directory which is used for the output of the logs and the http cache. Default: "~/.cache/tcia_downloader"
+
 ## The tcia_downloader_hpc.sh file
 This is just a template containing slurm directives. It can therefore be used locally as well as in an HPC environment. Adjust this file according to your application. It can be used as follows:
 
@@ -40,15 +43,28 @@ using locally:
 
 # Changelog
 
+## [0.2.0] - 2023.09.15
+
+### Added
+- Non-cached GET and POST requests use sessions even with caching is disabled: avoids re-establishing of the TCP connection during data download (speedup especially noticeable on smaller images)
+- Added the option to change the cache and logs path
+
+### Changed
+- Bugfix: exception is not thrown anymore when the metadata does not contain a value for SeriesDate ("unkown_date" used instead)
+- Changed default position of logs and cache (now at "~/.cache/tcia_downloader")
+- Logs are named by their creation date
+
 ## [0.1.2] - 2023.09.13
 
 ### Changed
-- fix in token renewal: user and password were not stored in tcia_utils object
+- Fix in token renewal: user and password were not stored in tcia_utils object
+
 
 ## [0.1.1] - 2023.09.12
 
 ### Changed
-- in case no compression is used: the data will be copied to the output folder after downloading
+- In case no compression is used: the data will be copied to the output folder after downloading
+
 
 ## [0.1.0] - 2023.09.11
 

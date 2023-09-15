@@ -18,9 +18,9 @@ from copy import deepcopy
 
 
 class Downloader:
-    def __init__(self, user=None, password=None, root_dir="", tempdir="", collection_name=None, logger=None) -> None:
+    def __init__(self, user=None, password=None, root_dir="", tempdir="", collection_name=None, logger=None, cache_dir=None) -> None:
         self.logger = logger
-        self.tcia_api = Tcia_api(user=user, pw=password, logger=logger)
+        self.tcia_api = Tcia_api(user=user, pw=password, logger=logger, cache_dir=cache_dir)
         self.root_dir = root_dir
         self.temp_dir = tempdir
         self.collection_name = collection_name
@@ -38,15 +38,28 @@ class Downloader:
         else:
         # Get metadata
             patient_id = entry_df["PatientID"].values[0]
-            date = str(datetime.strptime(entry_df["SeriesDate"].values[0], "%Y-%m-%d %H:%M:%S.%f").date().strftime("%d-%m-%Y"))
+            
+            SeriesDate = entry_df["SeriesDate"]
+            
+            # Check if SeriesDate is NaN: In some cases image metadata does not contain the SeriesData which leads to NaN in the dataframe
+            if SeriesDate.isnull().any():
+                self.logger.debug("SeriesDate is NaN. Using 'unkown_date' as SeriesDate instead.")
+                date = "unknown_date"
+            else:
+                date = str(datetime.strptime(SeriesDate.values[0], "%Y-%m-%d %H:%M:%S.%f").date().strftime("%d-%m-%Y"))
 
-            SeriesInstanceUID = entry_df["SeriesInstanceUID"].values[0]
-            SeriesInstanceUID = SeriesInstanceUID[-5:]
-            StudyInstanceUID = entry_df["StudyInstanceUID"].values[0]
-            StudyInstanceUID = StudyInstanceUID[-5:]
-            SeriesDescription = entry_df["SeriesDescription"].values[0]
-            SeriesNumber = entry_df["SeriesNumber"].values[0]  
-            StudyDescription = entry_metadata_df["Study Description"].values[0]
+            SeriesInstanceUID = entry_df["SeriesInstanceUID"]
+            StudyInstanceUID = entry_df["StudyInstanceUID"]
+            SeriesDescription = entry_df["SeriesDescription"]
+            SeriesNumber = entry_df["SeriesNumber"]
+            StudyDescription = entry_metadata_df["Study Description"]
+            self.logger.debug(f"One of the entries in the metadata is NaN. SeriesInstanceUID: {SeriesInstanceUID.values[0]}, StudyInstanceUID: {StudyInstanceUID.values[0]}, SeriesDescription: {SeriesDescription.values[0]}, Seriesnumber: {SeriesNumber.values[0]}, StudyDescription: {StudyDescription.values[0]}") if SeriesInstanceUID.isnull().any() or StudyInstanceUID.isnull().any() or SeriesDescription.isnull().any() or SeriesNumber.isnull().any() or StudyDescription.isnull().any() else None
+            
+            SeriesNumber = SeriesNumber.values[0]
+            SeriesDescription = SeriesDescription.values[0]
+            StudyInstanceUID = StudyInstanceUID.values[0][-5:] # last 5 digits are used as identifier (as in the original nbia downloader)
+            SeriesInstanceUID = SeriesInstanceUID.values[0][-5:] # last 5 digits are used as identifier (as in the original nbia downloader)
+            StudyDescription = StudyDescription.values[0]
 
             # Construct new path
             path = os.path.join(root_path, patient_id, f"{date}-{StudyDescription}-{StudyInstanceUID}", f"{SeriesNumber}-{SeriesDescription}-{SeriesInstanceUID}")
@@ -245,7 +258,7 @@ class Downloader:
         # Rename patients
         self.rename_patients(self.temp_dir)
 
-def get_logger(verbosity):
+def get_logger(verbosity, log_dir):
     logger = logging.getLogger(__name__)
     logger.propagate = False
     level = getattr(logging, verbosity)
@@ -258,11 +271,12 @@ def get_logger(verbosity):
     stream_handler.setFormatter(formatter)
     
     os.makedirs("logs", exist_ok=True)
-    file_handler_info = logging.FileHandler("logs/downloader.log", mode="w")
+    date = datetime.now()
+    file_handler_info = logging.FileHandler(f"{log_dir}/{date}.log", mode="w")
     file_handler_info.setLevel(logging.INFO)
     file_handler_info.setFormatter(formatter)
     
-    file_handler_debug = logging.FileHandler("logs/downloader_debug.log", mode="w")
+    file_handler_debug = logging.FileHandler(f"{log_dir}/{date}_debug.log", mode="w")
     file_handler_debug.setLevel(logging.DEBUG)
     file_handler_debug.setFormatter(formatter)
     
@@ -288,26 +302,25 @@ def main():
     parser.add_argument('--compress', '-c', action='store_true', default=False, required=False, help='Choose whether to compress the downloaded data. If False, the data will be downloaded only to the temporary directory')
     parser.add_argument('--bids', '-b', type=bool, default=False, required=False, help='Choose whether to convert the downloaded data to BIDS format. If False, the data will be downloaded only to the temporary directory')
     parser.add_argument('--verbosity', '-v', type=str, default="INFO", required=False, help="Choose the level of verbosity from [DEBUG, INFO, WARNING, ERROR, CRITICAL]. Default is 'INFO'")
+    parser.add_argument('--cache_dir', '-l', type=str, default=os.path.join(os.path.expanduser("~"), ".cache", "tcia_downloader"), required=False, help='Directory for cached files and logs. Default is ~/.cache/tcia_downloader')
     args = parser.parse_args()
         
     collection_name = args.collection
     output = os.path.normpath(args.output)
     output_file = path.join(output, f"{collection_name}.tar.gz")
-    
-    if args.temp_dir == None:
-        temp_dir= path.join(args.output, collection_name)
-    else:
-        temp_dir = path.join(args.temp_dir, collection_name)
-        
     user = args.user
     password = args.password
     compress = args.compress
     verbosity = args.verbosity
+    cache_dir = args.cache_dir
+    log_dir = os.path.join(cache_dir, "logs") 
+    os.makedirs(log_dir, exist_ok=True)
+    temp_dir = os.path.join(args.output, collection_name) if args.temp_dir == None else path.join(args.temp_dir, collection_name)
     
     if not verbosity in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
         raise Exception("Invalid level of verbosity.")
     
-    logger = get_logger(verbosity=verbosity)
+    logger = get_logger(verbosity=verbosity, log_dir=log_dir)
         
     
     if args.mode != "nbia":
@@ -327,8 +340,12 @@ def main():
 
     else:    
         
-        downloader = Downloader(user=user, password=password, logger=logger, collection_name=collection_name, root_dir=output, tempdir=temp_dir)
-        downloader.run()
+        downloader = Downloader(user=user, password=password, logger=logger, collection_name=collection_name, root_dir=output, tempdir=temp_dir, cache_dir=cache_dir)
+        try:
+            downloader.run()
+        except Exception as e:
+            logger.error(f"An error occurred during download: {e}")
+            raise e
             
         # compress
         if compress:

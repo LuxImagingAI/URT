@@ -1,15 +1,28 @@
+This changelog follows the Semantic Versioning convention (version 2.0.0)
+
 # Changelog
+
+## [0.2.0] - 2023.09.15
+
+### Added
+- Non-cached GET and POST requests use sessions even with caching is disabled: avoids re-establishing of the TCP connection during data download (speedup especially noticeable on smaller images)
+- Added the option to change the cache and logs path
+
+### Changed
+- Bugfix: exception is not thrown anymore when the metadata does not contain a value for SeriesDate ("unkown_date" used instead)
+- Changed default position of logs and cache (now at "~/.cache/tcia_downloader")
+- Logs are named by their creation date
 
 ## [0.1.2] - 2023.09.13
 
 ### Changed
-- fix in token renewal: user and password were not stored in tcia_utils object
+- Fix in token renewal: user and password were not stored in tcia_utils object
 
 
 ## [0.1.1] - 2023.09.12
 
 ### Changed
-- in case no compression is used: the data will be copied to the output folder after downloading
+- In case no compression is used: the data will be copied to the output folder after downloading
 
 
 ## [0.1.0] - 2023.09.11

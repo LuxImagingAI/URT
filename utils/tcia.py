@@ -17,8 +17,9 @@ import logging
 import zipfile, io
 
 class Tcia_api:
-    def __init__(self, user=None, pw=None, logger=None):
-        self.session = requests_cache.CachedSession("cache/http_cache", backend="sqlite", expire_after=timedelta(days=2))
+    def __init__(self, user=None, pw=None, logger=None, cache_dir=None):
+        self.cached_session = requests_cache.CachedSession(os.path.join(cache_dir, "http_cache.sqlite"), backend="sqlite", expire_after=timedelta(days=2))
+        self.session = requests.Session()
         self.base_url = "https://services.cancerimagingarchive.net/nbia-api/services/v1/" if pw==None else "https://services.cancerimagingarchive.net/nbia-api/services/v2/"
         self.advanced_url = "https://services.cancerimagingarchive.net/nbia-api/services/"
         self.logger = logger
@@ -83,10 +84,11 @@ class Tcia_api:
         data = None
         self.logger.debug(f"Requesting {url}")
         
+        
         for i in range(0, 5):
             timeout = ((i+5)**2)+20
             try:
-                data = requests.post(url, data=params, timeout=timeout)  
+                data = self.session.post(url, data=params, timeout=timeout)  
             except Exception as e:
                 if isinstance(e, KeyboardInterrupt):
                     sys.exit()
@@ -103,7 +105,7 @@ class Tcia_api:
 
         raise Exception(f"Request failed {10} times for {url}.")
     
-    def get_request(self, url, params={}, use_session=True, advanced_api=False):
+    def get_request(self, url, params={}, use_cache=True, advanced_api=False):
         data = None
         #self.logger.debug(f"Requesting {url} with params {params}")
         self.renew_tokens()
@@ -111,10 +113,10 @@ class Tcia_api:
         for i in range(0, 10):
             timeout = ((i+5)**2)+20
             try:
-                if use_session:
-                    data = self.session.get(url = url, headers=self.get_call_headers(), params=params, timeout=timeout)
+                if use_cache:
+                    data = self.cached_session.get(url = url, headers=self.get_call_headers(), params=params, timeout=timeout)
                 else:
-                    data = requests.get(url = url, headers=self.get_call_headers(), params=params, timeout=timeout)
+                    data = self.session.get(url = url, headers=self.get_call_headers(), params=params, timeout=timeout)
             except Exception as e:
                 if isinstance(e, KeyboardInterrupt):
                     sys.exit()
@@ -131,7 +133,7 @@ class Tcia_api:
         raise Exception(f"Request failed {10} times for {url}.")
             
     def getCollection(self):
-        self.logger.debug("Requesting available collections")
+        self.logger.debug(f"Requesting available collections")
         url = self.base_url + "getCollectionValues"
         data = self.get_request(url=url)
         collections = data.json() # list of dictionaries with {"Collection": collection_name}
@@ -144,6 +146,8 @@ class Tcia_api:
             available_collections_string = "\n".join(available_collections_list)
             self.logger.error(f"Collection \"{collection_name}\" not found. Available collections are: \n{available_collections_string}")
             raise Exception("Collection not found.")
+        else:
+            self.logger.info(f"Collection \"{collection_name}\" found.")
         
     def getSOPInstanceUIDs(self, SeriesInstanceUID):
         SOPInstanceURL = "getSOPInstanceUIDs"
@@ -182,7 +186,7 @@ class Tcia_api:
             SeriesInstanceUIDURL = "getImage"
         url = self.base_url + SeriesInstanceUIDURL
         params = {"SeriesInstanceUID": SeriesInstanceUID}
-        data = self.get_request(url=url, params=params, use_session=False)
+        data = self.get_request(url=url, params=params, use_cache=False)
         
         path = directory + "/" + SeriesInstanceUID
         with zipfile.ZipFile(io.BytesIO(data.content)) as zip_file:
@@ -207,7 +211,7 @@ class Tcia_api:
         return metadata
     
     def getSeriesMetadataDF(self, SeriesUID):
-        self.logger.info("Requesting metadata")
+        self.logger.info("Downloading metadata")
         '''
         Returns more metadata than just "getSeries"
         '''
