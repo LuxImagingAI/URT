@@ -24,9 +24,9 @@ class Tcia_api:
         self.advanced_url = "https://services.cancerimagingarchive.net/nbia-api/services/"
         self.logger = logger
         self.token, self.token_expires = None, None
-        self.generate_tokens(user=user, password=pw)
         self.user = user
         self.password = pw
+        self.generate_tokens()
     
     def dict_to_dataframe(func):
         def wrapper(*args, **kwargs):
@@ -51,10 +51,10 @@ class Tcia_api:
     
         return access_token
     
-    def generate_tokens(self, user, password):
-        if not password==None:
+    def generate_tokens(self):
+        if not self.password==None:
             self.logger.info("Requesting token")
-            token = self.get_token(user, password)
+            token = self.get_token(self.user, self.password)
             token_expires = datetime.now() + timedelta(hours=1, minutes=50)
             self.logger.info(f"Token expires at {token_expires}")
         else:
@@ -67,7 +67,7 @@ class Tcia_api:
     def renew_tokens(self):
         if datetime.now() > self.token_expires:
             self.logger.info("Renewing token")
-            self.generate_tokens(user=self.user, pw=self.password)
+            self.generate_tokens()
         return
 
     def get_call_headers(self):

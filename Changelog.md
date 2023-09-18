@@ -2,6 +2,11 @@ This changelog follows the Semantic Versioning convention (version 2.0.0)
 
 # Changelog
 
+## [0.2.1] - 2023.09.18
+
+### Changed
+- bugfix: error in token renewal
+
 ## [0.2.0] - 2023.09.15
 
 ### Added
