@@ -1,0 +1,19 @@
+services:
+  downloader:
+    image: "downloader:0.2.1"
+    build: .
+    volumes:
+      - ./output:/downloader/output
+      - ./temp_dir:/downloader/temp_dir
+      - ./cache_dir:/downloader/cache_dir
+    # args:
+    #   collection: test
+    #   password: none
+    #   user: none
+    #   compress:
+    command:
+      - --collection=UCSF-PDGM
+      - --mode=aspera
+      - --user=None
+      - --password=None
+
