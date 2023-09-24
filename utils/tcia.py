@@ -16,7 +16,7 @@ import requests_cache
 import logging
 import zipfile, io
 
-class Tcia_api:
+class TciaAPI:
     def __init__(self, user=None, pw=None, logger=None, cache_dir=None):
         self.cached_session = requests_cache.CachedSession(os.path.join(cache_dir, "http_cache.sqlite"), backend="sqlite", expire_after=timedelta(days=2))
         self.session = requests.Session()
