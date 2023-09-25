@@ -1,19 +1,10 @@
-import argparse
-from tcia_utils import nbia
-from os import path
-import subprocess, os
+import os
 import pandas as pd
 import time
-import warnings
 from datetime import datetime, timedelta
-import multiprocessing as mp
 import requests
-import hashlib
-import shutil
 import sys
-import signal
 import requests_cache
-import logging
 import zipfile, io
 
 class TciaAPI:
@@ -179,7 +170,7 @@ class TciaAPI:
     
     
     def downloadSeriesInstance(self, SeriesInstanceUID, directory, md5=True):
-        self.logger.info(f"Downloading {SeriesInstanceUID} to {directory}")
+        self.logger.debug(f"Downloading {SeriesInstanceUID} to {directory}")
         if md5:
             SeriesInstanceUIDURL = "getImageWithMD5Hash"
         else:

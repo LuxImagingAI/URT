@@ -1,22 +1,11 @@
-import argparse
 from utils.tcia import TciaAPI
 from os import path
-import subprocess, os
+import  os
 import pandas as pd
 import time
-import warnings
-from datetime import datetime, timedelta
-import multiprocessing as mp
-import requests
 import hashlib
 import shutil
-import sys
-import signal
-import requests_cache
-import logging
-from copy import deepcopy
-import tarfile
-
+from datetime import datetime
 
 class TciaDownloader:
     def __init__(self, user, password=None, tempdir="", collection_name=None, logger=None, cache_dir=None) -> None:
@@ -238,6 +227,8 @@ class TciaDownloader:
 
     def run(self):
         
+        os.makedirs(self.temp_dir, exist_ok=True)
+
         # check if collection exists
         self.tcia_api.check_collection(self.collection_name)
         
