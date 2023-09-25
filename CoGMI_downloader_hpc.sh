@@ -27,6 +27,7 @@ password=""
 export SINGULARITY_DOCKER_USERNAME=raphaelmaser@gmail.com
 export SINGULARITY_DOCKER_PASSWORD=dckr_pat_2H7B0b4fIYPndw4hl1vXFr72KHs
 
+module load tools/Singularity/3.8.1
 
 singularity pull docker://ydkq4eu2vrqc2uuy8x3c/cogmi_downloader:1.0.0
 singularity run \
@@ -40,7 +41,7 @@ singularity run \
     docker://ydkq4eu2vrqc2uuy8x3c/cogmi_downloader:1.0.0 \
     --user $user \
     --password $password \
-    --collection Brain-Tumor-Progression \
+    --collection UCSF-PDGM \
     --compress \
     #--bids
 
