@@ -11,7 +11,7 @@ import logging
 import yaml
 
 
-class Downloader:
+class CoGMIDownloader:
     def __init__(self, user=None, password=None, root_dir="", tempdir="", logger=None, cache_dir=None, compress=None, mode=None, bids=None, collection_name=None) -> None:
         self.logger = logger
         self.root_dir = root_dir
@@ -35,20 +35,22 @@ class Downloader:
                     datasets = yaml.safe_load(file)
 
             if self.mode=="auto":
-                if self.collection_name in datasets and "mode" in datasets[self.collection_name]:
-                    self.mode = datasets[self.collection_name]["mode"]
-                    self.logger.info(f"Found entry for the dataset. Using mode \"{self.mode}\" for the download")
+                if self.collection_name in datasets and "downloader" in datasets[self.collection_name]:
+                    self.downloader = datasets[self.collection_name]["downloader"]
+                    self.logger.info(f"Found entry in datasets.yaml. Using mode \"{self.downloader}\" for the download")
                 else:
-                    self.mode = "nbia"
-                    self.logger.warning("No entry for the collection in datasets.yaml. In this case only download through nbia is supported. Fallback to mode \"nbia\".")
+                    self.downloader = "nbia"
+                    self.logger.warning("No entry for the collection in datasets.yaml. In this case only download through nbia is supported. Fallback to downloader \"nbia\".")
 
-            if self.mode=="nbia":
+            if self.downloader=="nbia":
                 downloader = TciaDownloader(user=self.user, password=self.password, logger=self.logger, collection_name=self.collection_name, tempdir=self.temp_dir, cache_dir=self.cache_dir)
-            elif self.mode=="aspera":
+            elif self.downloader=="aspera":
                 downloader = AsperaDownloader(collection=self.collection_name, logger=self.logger, user=self.user, password=self.password, temp_dir=self.temp_dir)
-            elif self.mode=="openneuro":
+            elif self.downloader=="openneuro":
                 downloader = OpenneuroDownloader(logger=self.logger, collection=self.collection_name, temp_dir=self.temp_dir)
-            downloader.run()
+            
+            if self.downloader != "none":
+                downloader.run()
             
             # Converts data to the bids format (if bids argument is given and data is in dicom or unordered nifti format)
             self.convert_to_bids()
@@ -201,11 +203,11 @@ def main():
             for d in dataset_list:
                 logger.info(f"Starting with collection no. {i} from \"{collection_name}\": {d}")
                 collection_name = d
-                downloader = Downloader(user=user, password=password, root_dir=output, tempdir=temp_dir, logger=logger, cache_dir=cache_dir, compress=compress, mode=mode, bids=bids, collection_name=collection_name)
+                downloader = CoGMIDownloader(user=user, password=password, root_dir=output, tempdir=temp_dir, logger=logger, cache_dir=cache_dir, compress=compress, mode=mode, bids=bids, collection_name=collection_name)
                 downloader.run()
         
         else:
-            downloader = Downloader(user=user, password=password, root_dir=output, tempdir=temp_dir, logger=logger, cache_dir=cache_dir, compress=compress, mode=mode, bids=bids, collection_name=collection_name)
+            downloader = CoGMIDownloader(user=user, password=password, root_dir=output, tempdir=temp_dir, logger=logger, cache_dir=cache_dir, compress=compress, mode=mode, bids=bids, collection_name=collection_name)
             downloader.run()
     except Exception as e:
         logger.error(f"An error occurred during download of collection {collection_name}: {e}")
