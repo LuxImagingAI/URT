@@ -6,9 +6,9 @@ services:
       - ./output:/downloader/output
       - ./temp_dir:/downloader/temp_dir
       - ./cache_dir:/downloader/cache_dir
+      - ./collections.yaml:/downloader/collections.yaml
     command:
       - --collection=BTC_postop
-      - --mode=auto
       - --user=None
       - --password=None
       - --compress

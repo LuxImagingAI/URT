@@ -34,7 +34,7 @@ COPY datasets /downloader/datasets
 
 WORKDIR /downloader
 
-ENTRYPOINT ["/bin/bash",  "--login", "-c", "mamba run --no-capture-output -n CoGMI_downloader python downloader.py --output /downloader/output --temp_dir /downloader/temp_dir --cache_dir /downloader/cache_dir \"$0\" \"$@\""]
+ENTRYPOINT ["/bin/bash",  "--login", "-c", "mamba run --no-capture-output -n CoGMI_downloader python downloader.py \"$0\" \"$@\" --output /downloader/output --temp_dir /downloader/temp_dir --cache_dir /downloader/cache_dir"]
 
 
 

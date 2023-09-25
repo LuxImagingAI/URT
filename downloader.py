@@ -153,9 +153,8 @@ def main():
     parser.add_argument('--temp_dir', '-t', type=str, default=None, required=False, help='Temporary directory for downloading')
     parser.add_argument('--user', '-u', type=str, default=None, required=False, help='Username for TCIA')
     parser.add_argument('--password', '-p', type=str, default=None, required=False, help='Password for TCIA')
-    parser.add_argument('--mode', '-m', type=str, default='auto', required=False, help='Which downloader to use (nbia, aspera, openneuro, auto)')
-    parser.add_argument('--compress', '-c', action='store_true', default=False, required=False, help='Choose whether to compress the downloaded data. If False, the data will be downloaded only to the temporary directory')
-    parser.add_argument('--bids', '-b', action='store_true', default=False, required=False, help='Choose whether to convert the downloaded data to BIDS format. If False, the data will be downloaded only to the temporary directory')
+    parser.add_argument('--compress', '-c', action='store_true', default=False, required=False, help='Choose whether to compress the downloaded data.')
+    parser.add_argument('--bids', '-b', action='store_true', default=False, required=False, help='Choose whether to convert the downloaded data to BIDS format.')
     parser.add_argument('--verbosity', '-v', type=str, default="INFO", required=False, help="Choose the level of verbosity from [DEBUG, INFO, WARNING, ERROR, CRITICAL]. Default is 'INFO'")
     args = parser.parse_args()
         
@@ -169,8 +168,8 @@ def main():
     log_dir = os.path.join(cache_dir, "logs") 
     os.makedirs(log_dir, exist_ok=True)
     temp_dir = args.output if args.temp_dir == None else args.temp_dir
-    mode = args.mode
     bids = args.bids
+    mode = "auto"
     
     if not verbosity in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
         raise Exception("Invalid level of verbosity.")
@@ -193,8 +192,21 @@ def main():
     
 
     try:
-        downloader = Downloader(user=user, password=password, root_dir=output, tempdir=temp_dir, logger=logger, cache_dir=cache_dir, compress=compress, mode=mode, bids=bids, collection_name=collection_name)
-        downloader.run()
+
+        # If list is given convert all datasets
+        if collection_name.endswith(".yaml"):
+            with open(collection_name) as f:
+                dataset_list = yaml.safe_load(f)
+            i = 1
+            for d in dataset_list:
+                logger.info(f"Starting with collection no. {i} from \"{collection_name}\": {d}")
+                collection_name = d
+                downloader = Downloader(user=user, password=password, root_dir=output, tempdir=temp_dir, logger=logger, cache_dir=cache_dir, compress=compress, mode=mode, bids=bids, collection_name=collection_name)
+                downloader.run()
+        
+        else:
+            downloader = Downloader(user=user, password=password, root_dir=output, tempdir=temp_dir, logger=logger, cache_dir=cache_dir, compress=compress, mode=mode, bids=bids, collection_name=collection_name)
+            downloader.run()
     except Exception as e:
         logger.error(f"An error occurred during download of collection {collection_name}: {e}")
         raise e
