@@ -1,0 +1,17 @@
+services:
+  downloader:
+    build: . 
+    volumes:
+    # These define the mapping of the volumes inside the container
+      - ./output:/downloader/output
+      - ./temp_dir:/downloader/temp_dir
+      - ./cache_dir:/downloader/cache_dir
+      - ./collections.yaml:/downloader/collections.yaml
+    command:
+    # Here the arguments can be given to the docker container
+      - --collection=BTC_postop
+      - --user=None
+      - --password=None
+      - --compress
+      # - --bids
+

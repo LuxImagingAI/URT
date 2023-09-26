@@ -14,7 +14,7 @@ DICOM:
       ScanningSequence:
       SequenceName:
       SequenceVariant:
-      SeriesDescription: (FLAIR_reg)|(T1pre_reg)
+      SeriesDescription: (T1pre_reg)
       SliceThickness:
     bids:
       acq: <SeriesDescription>
@@ -50,7 +50,43 @@ DICOM:
       ScanningSequence:
       SequenceName:
       SequenceVariant:
-      SeriesDescription: (Mask_Tumor)|(T1post)|(dT1)
+      SeriesDescription: (FLAIR_reg)
+      SliceThickness:
+    bids:
+      acq: <SeriesDescription>
+      ce:
+      part:
+      - ''
+      - mag
+      - phase
+      - real
+      - imag
+      - 0
+      rec:
+      run: <<1>>
+      suffix: FLAIR
+    meta:
+    properties:
+      filename:
+      filepath:
+      filesize:
+      nrfiles:
+    provenance:
+  - attributes:
+      EchoNumbers:
+      EchoTime:
+      EffectiveEchoTime:
+      FlipAngle:
+      ImageType:
+      InPlanePhaseEncodingDirection:
+      MRAcquisitionType:
+      Modality:
+      ProtocolName:
+      RepetitionTime:
+      ScanningSequence:
+      SequenceName:
+      SequenceVariant:
+      SeriesDescription: (T1post)|(dT1)
       SliceThickness:
     bids:
       acq: <SeriesDescription>
@@ -65,6 +101,43 @@ DICOM:
       rec:
       run: <<1>>
       suffix: T1w
+    meta:
+      ContrastBolusIngredient: UNKNOWN
+    properties:
+      filename:
+      filepath:
+      filesize:
+      nrfiles:
+    provenance:
+  - attributes:
+      EchoNumbers:
+      EchoTime:
+      EffectiveEchoTime:
+      FlipAngle:
+      ImageType:
+      InPlanePhaseEncodingDirection:
+      MRAcquisitionType:
+      Modality:
+      ProtocolName:
+      RepetitionTime:
+      ScanningSequence:
+      SequenceName:
+      SequenceVariant:
+      SeriesDescription: (Mask_Tumor)
+      SliceThickness:
+    bids:
+      acq: <SeriesDescription>
+      ce: UNKNOWN
+      part:
+      - ''
+      - mag
+      - phase
+      - real
+      - imag
+      - 0
+      rec:
+      run: <<1>>
+      suffix: mask
     meta:
       ContrastBolusIngredient: UNKNOWN
     properties:
@@ -124,7 +197,7 @@ DICOM:
       ScanningSequence:
       SequenceName:
       SequenceVariant:
-      SeriesDescription: (nCBF_reg)|(nRCBV_reg)|(sRCBV_reg)
+      SeriesDescription: ADC_reg
       SliceThickness:
     bids:
       acq: <SeriesDescription>
@@ -142,7 +215,7 @@ DICOM:
     meta:
       B0FieldIdentifier:
       B0FieldSource:
-    provenance:
+    provenance:  
   extra_data:
   - attributes:
       EchoNumbers:
@@ -158,7 +231,7 @@ DICOM:
       ScanningSequence:
       SequenceName:
       SequenceVariant:
-      SeriesDescription: (ADC_reg)
+      SeriesDescription: (nCBF_reg)|(nRCBV_reg)|(sRCBV_reg)
       SliceThickness:
     bids:
       acq: <SeriesDescription>

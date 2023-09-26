@@ -1,0 +1,21 @@
+BTC_preop:
+  format: bids
+  downloader: openneuro
+  url: //openneuro.org/ds001226
+
+BTC_postop:
+  format: bids
+  downloader: openneuro
+  url: //openneuro.org/ds002080
+
+UCSF-PDGM:
+  format: nifti
+  downloader: aspera
+  url: https://faspex.cancerimagingarchive.net/aspera/faspex/external_deliveries/357?passcode=e722861fdd0278611166a64f0b66e46d9e6ae17c
+
+Brain-Tumor-Progression:
+  format: dicom
+  downloader: nbia
+  bids:
+    subject-prefix: "PGBM-"
+    session-prefix: "*"

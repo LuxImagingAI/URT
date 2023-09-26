@@ -6,24 +6,25 @@
 #SBATCH --time=0-36:00:00
 #SBATCH -p batch
 
-# Activates the correct environment
-conda activate tcia_downloader
+conda activate CoGMI_downloader
 
 # Name of the collection
-collection="QIN GBM Treatment Response"
+collection="UCSF-PDGM"
 
 # Output directory of the final .tar.xz archive
-output=$SCRATCH
+output=$SCRATCH/output
 
 # Directory of the downloaded folder before compression
-temp_dir=$SCRATCH
+temp_dir=$SCRATCH/temp
+
+# Cache directory
+cache_dir=$SCRATCH/cache
 
 # Username for TCIA
-user="" 
+user=None
 
 # Password for TCIA
-password=""
+password=None
 
-python tcia_downloader.py --collection "$collection" --output "$output" --temp_dir "$temp_dir"  --compress #--user "$user" --password "$password"
-
+python downloader.py --collection $collection --output $output --temp_dir $temp_dir --cache_dir $cache_dir --user $user --password $password --compress #--bids
 

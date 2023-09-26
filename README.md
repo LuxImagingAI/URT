@@ -1,95 +1,120 @@
-# tcia_downloader [0.2.1]
-Python script with matching slurm bash file for downloading datatasets from the TCIA (The Cancer Imaging Archive) in HPC environments, where other methods do not work well. The datasets are directly converted to a compressed archive (tar.xz). Currently suppports the nbia datasets (datasets with limited access not tested yet). Will support the aspera downloader in the future as well.
+# CoGMI_downloader [1.0.0]
+Tool for automatic download and BIDS conversion of TCIA and OpenNeuro datasets.
 
-## The tcia_downloader.py file
-The script takes up to 5 arguments as input:
+## Table of Contents
 
---collection: 
-The name of the collection which should be downloaded
+1. [Prerequisites](#prerequisites)
+2. [Installation](#installation)
+3. [Arguments](#arguments)
+4. [Usage](#usage)
+    - [Basic Usage](#basic-usage)
+    - [Advanced Usage](#advanced-usage)
 
---output:
-The output directory for the data
+# Prerequisites
+- Python 3.x
+- OPTIONAL: conda or mamba
+- OPTIONAL: aws cli (required for downloads from OpenNeuro)
+- OPTIONAL: aspera-cli (required for downloads from TCIA which are stored as NIFTI)
 
---temp_dir:
-The directory where the data is stored temporarily, e.g. for downloading (before compression). Can be useful in the HPC use case (inode limit). If no argument is given the output folder will be used.
+Alternatively docker can be used.
 
---user:
-The username of a TCIA acount. Needed when restricted collections are accessed.
+# Arguments
 
---password:
-The password of a TCIA acount. Needed when restricted collections are accessed.
+`--collection`: 
+The name of the collection which should be downloaded. Alternatively a .yaml file containing a list of collections for batch-processing of multiple datasets. An example can be seend in "collections.yaml".
 
---compression:
-The output folder will be automatically compressed
+`--output`:
+The output directory for the data. Default: "./output"
 
---mode:
-The mode of the downloader. Can be either 'nbia' or 'aspera'. Default is 'nbia'. ('aspera' not implemented yet)
+`--temp_dir`:
+The directory where the data is stored temporarily, e.g. for downloading (before compression). Can be useful in situations where not much space is left on the output drive. Default: output folder
 
---cache_dir:
+`--cache_dir`:
 Directory which is used for the output of the logs and the http cache. Default: "~/.cache/tcia_downloader"
 
-## The tcia_downloader_hpc.sh file
-This is just a template containing slurm directives. It can therefore be used locally as well as in an HPC environment. Adjust this file according to your application. It can be used as follows:
 
+`--user`:
+The username of a TCIA acount. Needed when restricted collections are accessed.
+
+`--password`:
+The password of a TCIA acount. Needed when restricted collections are accessed.
+
+`--bids`:
+If this argument is given the dataset(s) will be converted to bids after the download (if the required data for the conversion is given in datasets)
+
+`--compression`:
+If this argument is added the output folder will be automatically compressed.
+
+
+# Usage
+## Basic usage
+The following command will start the downloader with the given arguments.
+```bash
+python downloader.py --collection COLLECTION [--output OUTPUT] [--temp_dir TEMP_DIR] [--cache_dir CACHE_DIR] [--user USER] [--password PASSWORD] [--bids] [--compress]
 ```
-using slurm:
-sbatch tcia_downloader_hpc.sh
+The downloader will choose the appropriate downloader for the given collection (based on datasets/datasets.yaml). If the collection cannot be found it will fallback to donwloading via the nbia REST API and attempt a download of the collection. BIDS conversion is not possible in this case.
 
-using locally:
+If datasets from OpenNeuro or TCIA via Aspera are downloaded make sure that the additional dependencies are installed.
+
+### Advanced usage
+### Slurm
+The file CoGMI_downloader_hpc.sh is an example SLURM script for deployment on HPCs. By default it uses the $SLURM directory as temp_dir.
+
+In a slurm environment:
+```Bash
+sbatch tcia_downloader_hpc.sh
+```
+or locally:
+```Bash
 ./tcia_downloader_hpc.sh
 ```
 
+### Docker
+By using docker you can avoid the installation of the dependencies and achieve higher reproducibility.
+First build the image by executing the following command in the main folder.
 
+```Bash
+docker build . cogmi_downloader:1.0.0
+```
+
+Afterwards the container can be started by executing:
+```Bash
+docker run -v ./output:/downloader/output -v ./temp_dir:/downloader/temp_dir -v ./cache_dir:/downloader/cache_dir cogmi_downloader:1.0.0 -collection COLLECTION [--user USER] [--password PASSWORD] [--bids] [--compress]
+```
+In the case of docker the output, temporary directory and cache directory can be changed by modifying the mounted volumes in the docker run command. E.g. replacing "./output:/downloader/output" by "~/output:/downloader/output" will move the output folder to the home directory.
+### Docker compose
+The usage of docker compose is supported as well. Start docker compose by executing:
+```Bash
+docker compose up
+```
+The arguments and volumes can be changed in the compose.yaml file.
+
+### Singularity
+The docker image should be able to work with singularity as long as --fakeroot and --no-home arguments are given. 
 
 # Changelog
+Only the last version updates are indicated here. The full changelog can be found in the CHANGELOG.md.
 
-## [0.2.1] - 2023.09.18
-
-### Changed
-- bugfix: error in token renewal
-
-
-## [0.2.0] - 2023.09.15
+## [1.0.0] - 2023.09.26
 
 ### Added
-- Non-cached GET and POST requests use sessions even with caching is disabled: avoids re-establishing of the TCP connection during data download (speedup especially noticeable on smaller images)
-- Added the option to change the cache and logs path
+- Aspera integration
+- Openneuro integration using aws-cli (BTC_prepo and BTC_postop datasets)
+- Automatic detection of the correct downloader and source (Openneuroa, aspera, nbia)
+- Dockerfile
+- compose.yaml for docker compose
+- Support for automatic bids conversion
+- Support for lists of datasets in .yaml format: batch download and conversion of datasets
+- Support for datasets which cannot be downloaded automatically (i.e. BraTS)
 
-### Changed
-- Bugfix: exception is not thrown anymore when the metadata does not contain a value for SeriesDate ("unkown_date" used instead)
-- Changed default position of logs and cache (now at "~/.cache/tcia_downloader")
-- Logs are named by their creation date
-
-## [0.1.2] - 2023.09.13
-
-### Changed
-- Fix in token renewal: user and password were not stored in tcia_utils object
-
-
-## [0.1.1] - 2023.09.12
-
-### Changed
-- In case no compression is used: the data will be copied to the output folder after downloading
-
-
-## [0.1.0] - 2023.09.11
-
-### Added
-- Added new tcia_api class for handling the api calls
-- Simplified handling of tokens and token renewal
-- Logging via python logging library: better readability and flexibility
-- Logs are stored in the "logs" folder with two different levels of verbosity
-- API queries are now fault tolerant: multiple retries and increasing timeouts
-- Downloader checks data integrity using MD5 hashes
-- Checks for already downloaded data: works with renamed and mixed folders as well (if the script was interrupted during renaming)
-- GET requests (not carrying large files) are cached to avoid overhead
-- Removes unkown dicom files: avoids contamination by other datasets
-
-### Changed
-- Code refactored: better readability
-- Replaced getDicomTag API call with metadata from getSeriesMetadata: substantial reduction of API calls
-- Checks for file corruption are now much faster: removed calls to API (retrieves MD5 hash with image download instead)
-
-### Removed
-- Multiprocessing: now token renewal is handled in tcia_api
-- tcia_utils library (replaced by own tcia_api class)
+## Changed
+- Code refactored: better modularity
+- Representation of the datasets in datasets.yaml (previously: config.yaml)
+- Subprocesses: raise exception if subprocess exits with error
+- Subprocesses: output is appended to debug level logger 
+- Bids argument takes no longer a boolean as input
+- Bugfix: error with SeriesDate (some datasets do not contain this field)
+  
+## Removed
+- Unnecessary imports
+- Removed "mode" argument
