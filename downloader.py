@@ -10,6 +10,7 @@ import shutil
 import logging
 import yaml
 
+version="1.0.0"
 
 class CoGMIDownloader:
     def __init__(self, user=None, password=None, root_dir="", tempdir="", logger=None, cache_dir=None, compress=None, mode=None, bids=None, collection_name=None) -> None:
@@ -177,7 +178,7 @@ def main():
         raise Exception("Invalid level of verbosity.")
     
     logger = get_logger(verbosity=verbosity, log_dir=log_dir)
-        
+    logger.info(f"CoGMI downloader version {version} ")
     
     if mode not in ["nbia", "aspera", "openneuro", "auto"]:
         raise AssertionError("Mode not supported. Check the documentation again")

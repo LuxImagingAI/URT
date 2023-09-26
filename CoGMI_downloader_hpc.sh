@@ -6,42 +6,25 @@
 #SBATCH --time=0-36:00:00
 #SBATCH -p batch
 
-# Activates the correct environment
-conda activate tcia_downloader
+conda activate CoGMI_downloader
 
 # Name of the collection
-collection="QIN GBM Treatment Response"
+collection="UCSF-PDGM"
 
 # Output directory of the final .tar.xz archive
-output=$SCRATCH
+output=$SCRATCH/output
 
 # Directory of the downloaded folder before compression
-temp_dir=$SCRATCH
+temp_dir=$SCRATCH/temp
+
+# Cache directory
+cache_dir=$SCRATCH/cache
 
 # Username for TCIA
-user="" 
+user=None
 
 # Password for TCIA
-password=""
+password=None
 
-export SINGULARITY_DOCKER_USERNAME=raphaelmaser@gmail.com
-export SINGULARITY_DOCKER_PASSWORD=dckr_pat_2H7B0b4fIYPndw4hl1vXFr72KHs
-
-module load tools/Singularity/3.8.1
-
-singularity pull docker://ydkq4eu2vrqc2uuy8x3c/cogmi_downloader:1.0.0
-singularity run \
-    --writable-tmpfs \
-    --no-home \
-    --fakeroot \
-    --bind ./output:/downloader/output \
-    --bind ./temp_dir:/downloader/temp_dir \
-    --bind ./cache_dir:/downloader/cache_dir \
-    --bind ./collections.yaml:/downloader/collections.yaml \
-    docker://ydkq4eu2vrqc2uuy8x3c/cogmi_downloader:1.0.0 \
-    --user $user \
-    --password $password \
-    --collection UCSF-PDGM \
-    --compress \
-    #--bids
+python downloader.py --collection $collection --output $output --temp_dir $temp_dir --cache_dir $cache_dir --user $user --password $password --compress #--bids
 
