@@ -29,14 +29,18 @@ class TciaDownloader:
         # Get metadata
             patient_id = entry_df["PatientID"].values[0]
             
-            SeriesDate = entry_df["SeriesDate"]
             
-            # Check if SeriesDate is NaN: In some cases image metadata does not contain the SeriesData which leads to NaN in the dataframe
-            if SeriesDate.isnull().any():
-                self.logger.debug("SeriesDate is NaN. Using 'unkown_date' as SeriesDate instead.")
-                date = "unknown_date"
+            try:
+                SeriesDate = entry_df["SeriesDate"]
+            except:
+                date = "unkown_date"
             else:
-                date = str(datetime.strptime(SeriesDate.values[0], "%Y-%m-%d %H:%M:%S.%f").date().strftime("%d-%m-%Y"))
+                # Check if SeriesDate is NaN: In some cases image metadata does not contain the SeriesData which leads to NaN in the dataframe
+                if SeriesDate.isnull().any():
+                    self.logger.debug("SeriesDate is NaN. Using 'unkown_date' as SeriesDate instead.")
+                    date = "unknown_date"
+                else:
+                    date = str(datetime.strptime(SeriesDate.values[0], "%Y-%m-%d %H:%M:%S.%f").date().strftime("%d-%m-%Y"))
 
             SeriesInstanceUID = entry_df["SeriesInstanceUID"]
             StudyInstanceUID = entry_df["StudyInstanceUID"]

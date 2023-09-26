@@ -1,7 +1,6 @@
 services:
   downloader:
-    image: ydkq4eu2vrqc2uuy8x3c/cogmi_downloader:1.0.0
-    #build: . # uncomment for building the image locally
+    build: . 
     volumes:
     # These define the mapping of the volumes inside the container
       - ./output:/downloader/output

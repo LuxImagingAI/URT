@@ -1,6 +1,29 @@
 This changelog follows the Semantic Versioning convention (version 2.0.0)
 
 # Changelog
+## [1.0.0] - 2023.09.26
+
+### Added
+- Aspera integration
+- Openneuro integration using aws-cli (BTC_prepo and BTC_postop datasets)
+- Automatic detection of the correct downloader and source (Openneuroa, aspera, nbia)
+- Dockerfile
+- compose.yaml for docker compose
+- Support for automatic bids conversion
+- Support for lists of datasets in .yaml format: batch download and conversion of datasets
+- Support for datasets which cannot be downloaded automatically (i.e. BraTS)
+
+## Changed
+- Code refactored: better modularity
+- Representation of the datasets in datasets.yaml (previously: config.yaml)
+- Subprocesses: raise exception if subprocess exits with error
+- Subprocesses: output is appended to debug level logger 
+- Bids argument takes no longer a boolean as input
+- Bugfix: error with SeriesDate (some datasets do not contain this field)
+  
+## Removed
+- Unnecessary imports
+- Removed "mode" argument
 
 ## [0.2.1] - 2023.09.18
 
