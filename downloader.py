@@ -10,7 +10,7 @@ import shutil
 import logging
 import yaml
 
-version="1.0.0"
+version="1.0.1"
 
 class CoGMIDownloader:
     def __init__(self, user=None, password=None, root_dir="", tempdir="", logger=None, cache_dir=None, compress=None, mode=None, bids=None, collection_name=None) -> None:

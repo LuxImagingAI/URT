@@ -1,4 +1,4 @@
-# CoGMI_downloader [1.0.0]
+# CoGMI_downloader [1.0.1]
 Tool for automatic download and BIDS conversion of TCIA and OpenNeuro datasets.
 
 ## Table of Contents
