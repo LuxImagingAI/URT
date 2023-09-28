@@ -1,6 +1,10 @@
 This changelog follows the Semantic Versioning convention (version 2.0.0)
 
 # Changelog
+## [1.0.1] - 2023.09.28
+### Changed
+- Bugfix in .sh script: fixed error with spaces in arguments
+
 ## [1.0.0] - 2023.09.26
 
 ### Added

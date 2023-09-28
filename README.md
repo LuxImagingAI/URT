@@ -1,4 +1,4 @@
-# CoGMI_downloader [1.0.0]
+# CoGMI_downloader [1.0.1]
 Tool for automatic download and BIDS conversion of TCIA and OpenNeuro datasets.
 
 ## Table of Contents
@@ -94,6 +94,11 @@ The docker image should be able to work with singularity as long as --fakeroot a
 
 # Changelog
 Only the last version updates are indicated here. The full changelog can be found in the CHANGELOG.md.
+
+## [1.0.1] - 2023.09.28
+### Changed
+- Bugfix in .sh script: fixed error with spaces in arguments
+
 
 ## [1.0.0] - 2023.09.26
 
