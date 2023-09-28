@@ -26,5 +26,5 @@ user=None
 # Password for TCIA
 password=None
 
-python downloader.py --collection $collection --output $output --temp_dir $temp_dir --cache_dir $cache_dir --user $user --password $password --compress #--bids
+python downloader.py --collection "$collection" --output "$output" --temp_dir "$temp_dir" --cache_dir "$cache_dir" --user "$user" --password "$password" --compress #--bids
 
