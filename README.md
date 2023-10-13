@@ -70,19 +70,23 @@ or locally:
 ```
 
 ### Docker
-By using docker you can avoid the installation of the dependencies and achieve higher reproducibility.
-First build the image by executing the following command in the main folder.
+> **Warning:** As long as the project is not published yet the docker image is only available through a private repo on dockerhub. Before running the image you need to login to dockerhub by executing: 
+> ```bash
+> docker login --username raphaelmaser@gmail.com
+>```
+> with the password "dckr_pat_2H7B0b4fIYPndw4hl1vXFr72KHs"
 
-```Bash
-docker build . cogmi_downloader:1.0.0
-```
+By using docker you can avoid the installation of any dependencies and achieve higher reproducibility.
 
-Afterwards the container can be started by executing:
+The container can be started by executing:
 ```Bash
-docker run -v ./output:/downloader/output -v ./temp_dir:/downloader/temp_dir -v ./cache_dir:/downloader/cache_dir cogmi_downloader:1.0.0 -collection COLLECTION [--user USER] [--password PASSWORD] [--bids] [--compress]
+docker run -v ./output:/downloader/output -v ./temp_dir:/downloader/temp_dir -v ./cache_dir:/downloader/cache_dir ydkq4eu2vrqc2uuy8x3c/cogmi_downloader:latest --collection COLLECTION [--user USER] [--password PASSWORD] [--bids] [--compress]
 ```
 In the case of docker the output, temporary directory and cache directory can be changed by modifying the mounted volumes in the docker run command. E.g. replacing "./output:/downloader/output" by "~/output:/downloader/output" will move the output folder to the home directory.
+
 ### Docker compose
+> **Warning:** The same restrictions concerning the private repo apply here.
+
 The usage of docker compose is supported as well. Start docker compose by executing:
 ```Bash
 docker compose up
@@ -90,10 +94,28 @@ docker compose up
 The arguments and volumes can be changed in the compose.yaml file.
 
 ### Singularity
-The docker image should be able to work with singularity as long as --fakeroot and --no-home arguments are given. 
+> **Warning:** As long as the project is not published yet the docker image is only available through a private repo on dockerhub. Before running the image you need to set two environment variables for singularity: 
+> ```bash
+> export SINGULARITY_DOCKER_USERNAME=raphaelmaser@gmail.com
+>export SINGULARITY_DOCKER_PASSWORD=dckr_pat_2H7B0b4fIYPndw4hl1vXFr72KHs
+>
+>```
+
+Singularity is supported as well. The following command can be used to pull the docker image from dockerhub, convert it to the singularity image format .sif and run it:
+
+```bash
+singularity run --cleanenv --writable-tmpfs --no-home --bind ./output:/downloader/output --bind ./temp_dir:/downloader/temp_dir --bind ./cache_dir:/downloader/cache_dir docker://ydkq4eu2vrqc2uuy8x3c/cogmi_downloader:latest --collection COLLECTION [--user USER] [--password PASSWORD] [--bids] [--compress]
+```
+
+Similar to docker, the output folder can be changed by changing the path of the mounted directories.
 
 # Changelog
 Only the last version updates are indicated here. The full changelog can be found in the CHANGELOG.md.
+
+## [1.0.2] - 2023.10.13
+### Added
+- Docker image now compatible with Singularity
+
 
 ## [1.0.1] - 2023.09.28
 ### Changed
@@ -112,7 +134,7 @@ Only the last version updates are indicated here. The full changelog can be foun
 - Support for lists of datasets in .yaml format: batch download and conversion of datasets
 - Support for datasets which cannot be downloaded automatically (i.e. BraTS)
 
-## Changed
+### Changed
 - Code refactored: better modularity
 - Representation of the datasets in datasets.yaml (previously: config.yaml)
 - Subprocesses: raise exception if subprocess exits with error
@@ -120,6 +142,6 @@ Only the last version updates are indicated here. The full changelog can be foun
 - Bids argument takes no longer a boolean as input
 - Bugfix: error with SeriesDate (some datasets do not contain this field)
   
-## Removed
+### Removed
 - Unnecessary imports
 - Removed "mode" argument
