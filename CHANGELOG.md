@@ -1,6 +1,11 @@
 This changelog follows the Semantic Versioning convention (version 2.0.0)
 
 # Changelog
+
+## [1.0.2] - 2023.10.13
+### Added
+- Docker image now compatible with Singularity
+
 ## [1.0.1] - 2023.09.28
 ### Changed
 - Bugfix in .sh script: fixed error with spaces in arguments
@@ -17,7 +22,7 @@ This changelog follows the Semantic Versioning convention (version 2.0.0)
 - Support for lists of datasets in .yaml format: batch download and conversion of datasets
 - Support for datasets which cannot be downloaded automatically (i.e. BraTS)
 
-## Changed
+### Changed
 - Code refactored: better modularity
 - Representation of the datasets in datasets.yaml (previously: config.yaml)
 - Subprocesses: raise exception if subprocess exits with error
@@ -25,7 +30,7 @@ This changelog follows the Semantic Versioning convention (version 2.0.0)
 - Bids argument takes no longer a boolean as input
 - Bugfix: error with SeriesDate (some datasets do not contain this field)
   
-## Removed
+### Removed
 - Unnecessary imports
 - Removed "mode" argument
 
