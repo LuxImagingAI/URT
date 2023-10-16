@@ -1,6 +1,6 @@
 services:
   downloader:
-    build: . 
+    image: ydkq4eu2vrqc2uuy8x3c/cogmi_downloader:latest
     volumes:
     # These define the mapping of the volumes inside the container
       - ./output:/downloader/output

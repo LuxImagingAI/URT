@@ -4,13 +4,14 @@ from utils.aspera_downloader import AsperaDownloader
 from utils.openneuro_downloader import OpenneuroDownloader
 from utils.utils import run_subprocess
 from os import path
-import subprocess, os
+import os
 from datetime import datetime
 import shutil
 import logging
 import yaml
+import pandas as pd
 
-version="1.0.1"
+version="1.1.0"
 
 class CoGMIDownloader:
     def __init__(self, user=None, password=None, root_dir="", tempdir="", logger=None, cache_dir=None, compress=None, mode=None, bids=None, collection_name=None) -> None:
@@ -56,10 +57,13 @@ class CoGMIDownloader:
             # Converts data to the bids format (if bids argument is given and data is in dicom or unordered nifti format)
             self.convert_to_bids()
 
+            # Add dseg.tsv file if applicable
+            self.add_dseg_file()
+
+
             # compress
             if self.compress:
                 self.logger.info("Compressing data")
-                output_file = path.join(self.root_dir, f"{self.collection_name}.tar.gz")
                 
                 try:
                     command = ["tar", "-I", "pigz",  "-cf", output_file, "-C", self.temp_dir, self.collection_name, "--remove-files"]
@@ -81,18 +85,20 @@ class CoGMIDownloader:
         if self.bids:
             format = datasets[self.collection_name]["format"]
 
+            bidsmap_path = os.path.join("datasets", "bidsmaps", f"{self.collection_name}.yaml")
             # Dont convert datasets which are already in bids format (or dont contain valid bidsmaps)
             if format == "bids":
                 self.logger.info("Dataset is already in BIDS format. Nothing to do ...")
             elif "bids" not in datasets[self.collection_name] or not os.path.exists(os.path.join("datasets", "bidsmaps", f"{self.collection_name}.yaml" )):
                 self.logger.warning("No bids conversion possible: missing data for \"bids\" in datasets.yaml")
-            
+            elif not os.path.exists(bidsmap_path):
+                self.logger.warning("Bidsmap not found")
             # Convert dataset
             else:
                 # Get relevant data from datasets.yaml and paths
                 session_prefix = datasets[self.collection_name]["bids"]["session-prefix"]
                 subject_prefix = datasets[self.collection_name]["bids"]["subject-prefix"]
-                bidsmap_path = os.path.join("datasets", "bidsmaps", f"{self.collection_name}.yaml")
+                
                 collection_dir = os.path.join(self.temp_dir, self.collection_name) 
                 bids_collection_dir = os.path.join(self.temp_dir, f"{self.collection_name}_BIDS")
                 plugin = "dcm2niix2bids" if format=="dicom" else "nibabel2bids"
@@ -111,6 +117,30 @@ class CoGMIDownloader:
                 os.rename(bids_collection_dir, collection_dir)
                 self.logger.info("Bids conversion finished")
                 return
+        
+    def add_dseg_file(self):
+        with open("datasets/datasets.yaml", "r") as file:
+            datasets = yaml.safe_load(file)
+        
+        if self.collection_name in datasets and "bids" in datasets[self.collection_name] and "masks" in datasets[self.collection_name]["bids"]:
+            masks = datasets[self.collection_name]["bids"]["masks"]
+            masks_pd_compatible = {
+                "index": [],
+                "name": [],
+                "mapping": []
+            }
+            i=0
+            for key, value in masks.items():
+                masks_pd_compatible["index"].append(i)
+                masks_pd_compatible["name"].append(value)
+                masks_pd_compatible["mapping"].append(key)
+                i+=1
+            
+            masks_df = pd.DataFrame(masks_pd_compatible)
+
+            # Write the DataFrame to a .tsv file
+            masks_df.to_csv(os.path.join(self.root_dir, self.collection_name, 'dseg.tsv'), sep='\t', index=False)
+        return
 
 
     
@@ -208,6 +238,7 @@ def main():
                 downloader.run()
         
         else:
+            logger.info(f"Starting with collection: {collection_name}")
             downloader = CoGMIDownloader(user=user, password=password, root_dir=output, tempdir=temp_dir, logger=logger, cache_dir=cache_dir, compress=compress, mode=mode, bids=bids, collection_name=collection_name)
             downloader.run()
     except Exception as e:

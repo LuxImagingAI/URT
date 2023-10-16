@@ -2,6 +2,16 @@ This changelog follows the Semantic Versioning convention (version 2.0.0)
 
 # Changelog
 
+## [1.1.0] - 2021.10.16
+
+### Added
+- Automatic creation of dseg.tsv for supported datasets
+- Support for dataset: Brats-2021
+
+### Changed
+- Readme.md: error in docker and singularity command (mounting collections.yaml)
+- Minor changes in logger
+
 ## [1.0.2] - 2023.10.13
 ### Added
 - Docker image now compatible with Singularity
@@ -9,6 +19,7 @@ This changelog follows the Semantic Versioning convention (version 2.0.0)
 ## [1.0.1] - 2023.09.28
 ### Changed
 - Bugfix in .sh script: fixed error with spaces in arguments
+
 
 ## [1.0.0] - 2023.09.26
 

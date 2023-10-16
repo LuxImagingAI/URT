@@ -19,3 +19,15 @@ Brain-Tumor-Progression:
   bids:
     subject-prefix: "PGBM-"
     session-prefix: "*"
+
+Brats-2021:
+  format: nifti
+  downloader: none
+  bids:
+    subject-prefix: "BraTS2021_"
+    session-prefix: "*"
+    masks:
+      0: peritumoral edema
+      1: GD-enhancing tumor
+      2: necrotic and non-enhancing tumor core
+

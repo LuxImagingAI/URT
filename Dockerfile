@@ -24,17 +24,18 @@ RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2
     unzip awscliv2.zip &&\
     ./aws/install
 
+RUN chmod -R a+rwx /mambaforge &&\
+    chmod -R a+rwx /usr &&\
+    chmod -R a+rwx /root &&\
+    chmod -R a+rwx /aws &&\
+    chmod -R a+rwx /tmp
+
 # Copy files
 COPY utils /downloader/utils
 COPY downloader.py /downloader/downloader.py
 COPY datasets /downloader/datasets
 
-RUN chmod -R a+rwx /downloader &&\
-    chmod -R a+rwx /mambaforge &&\
-    chmod -R a+rwx /usr &&\
-    chmod -R a+rwx /root &&\
-    chmod -R a+rwx /aws &&\
-    chmod -R a+rwx /tmp
+RUN chmod -R a+rwx /downloader
 
 RUN echo "#!/bin/bash" > /startup.sh &&\
     echo "export HOME=/root" >> /startup.sh &&\

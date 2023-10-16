@@ -1,4 +1,4 @@
-# CoGMI_downloader [1.0.2]
+# CoGMI_downloader [1.1.0]
 Tool for automatic download and BIDS conversion of TCIA and OpenNeuro datasets.
 
 ## Table of Contents
@@ -80,7 +80,7 @@ By using docker you can avoid the installation of any dependencies and achieve h
 
 The container can be started by executing:
 ```Bash
-docker run -v ./output:/downloader/output -v ./temp_dir:/downloader/temp_dir -v ./cache_dir:/downloader/cache_dir ydkq4eu2vrqc2uuy8x3c/cogmi_downloader:latest --collection COLLECTION [--user USER] [--password PASSWORD] [--bids] [--compress]
+docker run -v ./output:/downloader/output -v ./temp_dir:/downloader/temp_dir -v ./cache_dir:/downloader/cache_dir -v ./collections.yaml:/downloader/collections.yaml ydkq4eu2vrqc2uuy8x3c/cogmi_downloader:latest --collection COLLECTION [--user USER] [--password PASSWORD] [--bids] [--compress]
 ```
 In the case of docker the output, temporary directory and cache directory can be changed by modifying the mounted volumes in the docker run command. E.g. replacing "./output:/downloader/output" by "~/output:/downloader/output" will move the output folder to the home directory.
 
@@ -104,13 +104,23 @@ The arguments and volumes can be changed in the compose.yaml file.
 Singularity is supported as well. The following command can be used to pull the docker image from dockerhub, convert it to the singularity image format .sif and run it:
 
 ```bash
-singularity run --cleanenv --writable-tmpfs --no-home --bind ./output:/downloader/output --bind ./temp_dir:/downloader/temp_dir --bind ./cache_dir:/downloader/cache_dir docker://ydkq4eu2vrqc2uuy8x3c/cogmi_downloader:latest --collection COLLECTION [--user USER] [--password PASSWORD] [--bids] [--compress]
+singularity run --cleanenv --writable-tmpfs --no-home --bind ./output:/downloader/output --bind ./temp_dir:/downloader/temp_dir --bind ./cache_dir:/downloader/cache_dir --bind ./collections.yaml:/downloader/collections.yaml docker://ydkq4eu2vrqc2uuy8x3c/cogmi_downloader:latest --collection COLLECTION [--user USER] [--password PASSWORD] [--bids] [--compress]
 ```
 
 Similar to docker, the output folder can be changed by changing the path of the mounted directories.
 
 # Changelog
 Only the last version updates are indicated here. The full changelog can be found in the CHANGELOG.md.
+
+## [1.1.0] - 2021.10.16
+
+### Added
+- Automatic creation of dseg.tsv for supported datasets
+- Support for dataset: Brats-2021
+
+### Changed
+- Readme.md: error in docker and singularity command (mounting collections.yaml)
+- Minor changes in logger
 
 ## [1.0.2] - 2023.10.13
 ### Added
