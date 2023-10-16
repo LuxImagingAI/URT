@@ -58,7 +58,7 @@ If datasets from OpenNeuro or TCIA via Aspera are downloaded make sure that the 
 
 ### Advanced usage
 ### Slurm
-The file CoGMI_downloader_hpc.sh is an example SLURM script for deployment on HPCs. By default it uses the $SLURM directory as temp_dir.
+The file CoGMI_downloader_hpc.sh is an example SLURM script for deployment on HPCs. By default it uses the $SCRATCH directory as temp_dir.
 
 In a slurm environment:
 ```Bash
