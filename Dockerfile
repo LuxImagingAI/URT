@@ -42,6 +42,3 @@ RUN echo "#!/bin/bash" > /startup.sh &&\
     chmod a+x /startup.sh
 
 ENTRYPOINT ["/bin/bash",  "--login", "-c", "source /startup.sh && cd /downloader && /mambaforge/bin/mamba run --no-capture-output -n CoGMI_downloader python downloader.py \"$0\" \"$@\" --output /downloader/output --temp_dir /downloader/temp_dir --cache_dir /downloader/cache_dir"]
-
-
-

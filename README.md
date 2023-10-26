@@ -117,6 +117,7 @@ Only the last version updates are indicated here. The full changelog can be foun
 ### Added
 - Automatic creation of dseg.tsv for supported datasets
 - Support for dataset: Brats-2021
+- Automatically removes unwanted Patients from BTC_preop and BTC_postop
 
 ### Changed
 - Readme.md: error in docker and singularity command (mounting collections.yaml)

@@ -2,11 +2,29 @@ BTC_preop:
   format: bids
   downloader: openneuro
   url: //openneuro.org/ds001226
+  keep_patients:
+  - sub-PAT05
+  - sub-PAT16
+  - sub-PAT20
+  - sub-PAT22
+  - sub-PAT25
+  - sub-PAT26
+  - sub-PAT27
+  - sub-PAT28
+  - sub-PAT29
+  - sub-PAT31
 
 BTC_postop:
   format: bids
   downloader: openneuro
   url: //openneuro.org/ds002080
+  keep_patients:
+  - sub-PAT05
+  - sub-PAT16
+  - sub-PAT20
+  - sub-PAT25
+  - sub-PAT26
+  - sub-PAT28
 
 UCSF-PDGM:
   format: nifti

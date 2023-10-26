@@ -7,6 +7,7 @@ This changelog follows the Semantic Versioning convention (version 2.0.0)
 ### Added
 - Automatic creation of dseg.tsv for supported datasets
 - Support for dataset: Brats-2021
+- Automatically removes unwanted Patients from BTC_preop and BTC_postop
 
 ### Changed
 - Readme.md: error in docker and singularity command (mounting collections.yaml)

@@ -25,7 +25,8 @@ class CoGMIDownloader:
         self.mode = mode
         self.bids = bids
         self.collection_name = collection_name
-    
+        self.collection_dir = os.path.join(root_dir, collection_name)
+
     def run(self):
         #collection_temp_dir = path.join(self.temp_dir, collection_name)
         output_file = path.join(self.root_dir, f"{self.collection_name}.tar.gz")
@@ -59,6 +60,9 @@ class CoGMIDownloader:
 
             # Add dseg.tsv file if applicable
             self.add_dseg_file()
+
+            # if "keep_patients" is defined: remove unwanted patients
+            self.remove_patients()
 
 
             # compress
@@ -123,6 +127,7 @@ class CoGMIDownloader:
             datasets = yaml.safe_load(file)
         
         if self.collection_name in datasets and "bids" in datasets[self.collection_name] and "masks" in datasets[self.collection_name]["bids"]:
+            self.logger.info("Adding dseg.tsv file")
             masks = datasets[self.collection_name]["bids"]["masks"]
             masks_pd_compatible = {
                 "index": [],
@@ -139,9 +144,23 @@ class CoGMIDownloader:
             masks_df = pd.DataFrame(masks_pd_compatible)
 
             # Write the DataFrame to a .tsv file
-            masks_df.to_csv(os.path.join(self.root_dir, self.collection_name, 'dseg.tsv'), sep='\t', index=False)
+            masks_df.to_csv(os.path.join(self.collection_dir, 'dseg.tsv'), sep='\t', index=False)
         return
 
+    def remove_patients(self):
+        with open("datasets/datasets.yaml", "r") as file:
+            datasets = yaml.safe_load(file)
+
+        if self.collection_name in datasets and "keep_patients" in datasets[self.collection_name]:
+            self.logger.info(f"Removing unwanted Patients in {self.collection_dir}")
+            patients = datasets[self.collection_name]["keep_patients"]
+            for root, dirs, file in os.walk(self.collection_dir):
+                for dir in dirs:
+                    if dir not in patients:
+                        folder = os.path.join(root, dir)
+                        self.logger.debug(f"Removing folder: {folder}")
+                        shutil.rmtree(os.path.join(root, dir))
+            
 
     
 
