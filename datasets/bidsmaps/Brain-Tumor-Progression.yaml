@@ -86,7 +86,7 @@ DICOM:
       ScanningSequence:
       SequenceName:
       SequenceVariant:
-      SeriesDescription: (T1post)|(dT1)
+      SeriesDescription: (T1post)
       SliceThickness:
     bids:
       acq: <SeriesDescription>
@@ -137,6 +137,7 @@ DICOM:
       - 0
       rec:
       run: <<1>>
+      desc: tumor
       suffix: mask
     meta:
       ContrastBolusIngredient: UNKNOWN
@@ -231,7 +232,7 @@ DICOM:
       ScanningSequence:
       SequenceName:
       SequenceVariant:
-      SeriesDescription: (nCBF_reg)|(nRCBV_reg)|(sRCBV_reg)
+      SeriesDescription: (nCBF_reg)|(nRCBV_reg)|(sRCBV_reg)|(dT1)
       SliceThickness:
     bids:
       acq: <SeriesDescription>
