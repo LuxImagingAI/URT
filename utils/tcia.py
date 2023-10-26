@@ -126,7 +126,7 @@ class TciaAPI:
     def getCollection(self):
         self.logger.debug(f"Requesting available collections")
         url = self.base_url + "getCollectionValues"
-        data = self.get_request(url=url)
+        data = self.get_request(url=url, use_cache=False)
         collections = data.json() # list of dictionaries with {"Collection": collection_name}
         return collections
     
