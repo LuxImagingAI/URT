@@ -1,4 +1,4 @@
-FROM debian:bookworm
+FROM debian:bookworm-20231030
 
 # install apt dependencies
 RUN apt-get update
@@ -31,9 +31,11 @@ RUN chmod -R a+rwx /mambaforge &&\
     chmod -R a+rwx /tmp
 
 # Copy files
-COPY utils /downloader/utils
-COPY downloader.py /downloader/downloader.py
-COPY datasets /downloader/datasets
+COPY utils /URT/utils
+COPY downloader /URT/downloader
+COPY URT.py /URT/URT.py
+COPY datasets /URT/datasets
+COPY config /URT/config
 
 RUN chmod -R a+rwx /downloader
 
@@ -41,4 +43,4 @@ RUN echo "#!/bin/bash" > /startup.sh &&\
     echo "export HOME=/root" >> /startup.sh &&\
     chmod a+x /startup.sh
 
-ENTRYPOINT ["/bin/bash",  "--login", "-c", "source /startup.sh && cd /downloader && /mambaforge/bin/mamba run --no-capture-output -n CoGMI_downloader python downloader.py \"$0\" \"$@\" --output /downloader/output --temp_dir /downloader/temp_dir --cache_dir /downloader/cache_dir"]
+ENTRYPOINT ["/bin/bash",  "--login", "-c", "source /startup.sh && cd /URT && /mambaforge/bin/mamba run --no-capture-output -n CoGMI_downloader python URT.py \"$0\" \"$@\" --output /URT/output --temp_dir /URT/temp_dir --cache_dir /URT/cache_dir"]

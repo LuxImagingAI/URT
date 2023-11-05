@@ -1,46 +1,49 @@
 BTC_preop:
   format: bids
-  downloader: openneuro
+  downloader: AwsDownloader
   url: //openneuro.org/ds001226
-  keep_patients:
-  - sub-PAT05
-  - sub-PAT16
-  - sub-PAT20
-  - sub-PAT22
-  - sub-PAT25
-  - sub-PAT26
-  - sub-PAT27
-  - sub-PAT28
-  - sub-PAT29
-  - sub-PAT31
+  modules:
+  - name: keep_patients
+    data:
+    - sub-PAT05
+    - sub-PAT16
+    - sub-PAT20
+    - sub-PAT22
+    - sub-PAT25
+    - sub-PAT26
+    - sub-PAT27
+    - sub-PAT28
+    - sub-PAT29
+    - sub-PAT31
 
 BTC_postop:
   format: bids
-  downloader: openneuro
+  downloader: AwsDownloader
   url: //openneuro.org/ds002080
-  keep_patients:
-  - sub-PAT05
-  - sub-PAT16
-  - sub-PAT20
-  - sub-PAT25
-  - sub-PAT26
-  - sub-PAT28
+  modules:
+  - keep_patients:
+    - sub-PAT05
+    - sub-PAT16
+    - sub-PAT20
+    - sub-PAT25
+    - sub-PAT26
+    - sub-PAT28
 
 UCSF-PDGM:
   format: nifti
-  downloader: aspera
+  downloader: AsperaDownloader
   url: https://faspex.cancerimagingarchive.net/aspera/faspex/external_deliveries/357?passcode=e722861fdd0278611166a64f0b66e46d9e6ae17c
 
 Brain-Tumor-Progression:
   format: dicom
-  downloader: nbia
+  downloader: TciaDownloader
   bids:
     subject-prefix: "PGBM-"
     session-prefix: "*"
 
 Brats-2021:
   format: nifti
-  downloader: none
+  downloader: Manual
   bids:
     subject-prefix: "BraTS2021_"
     session-prefix: "*"

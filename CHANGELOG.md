@@ -2,16 +2,27 @@ This changelog follows the Semantic Versioning convention (version 2.0.0)
 
 # Changelog
 
-## [1.1.0] - 2021.10.16
+## [2.0.0] - 2021.11.05
 
 ### Added
 - Automatic creation of dseg.tsv for supported datasets
 - Support for dataset: Brats-2021
 - Automatically removes unwanted Patients from BTC_preop and BTC_postop
+- Modules: allow arbitrary modifications of the downloaded datasets
+- Credentials file supporting seperate credentials for every downloader
 
 ### Changed
 - Readme.md: error in docker and singularity command (mounting collections.yaml)
 - Minor changes in logger
+- Increased modularity of the downloaders
+- Downloader class: every downloader has to inherit from "Downloader"
+- Numerous enhancements concerning readability and simplicity
+- Manual download represented by the "Manual" downloader class instead of "none"
+- Changed format of datasets in datasets.yaml
+
+### Removed
+- Username and password are not given as argument anymore
+- Duplicate code: opening dataset.yaml (now opened once during object initialization)
 
 ## [1.0.2] - 2023.10.13
 ### Added

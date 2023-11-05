@@ -1,14 +1,13 @@
 import subprocess
 import yaml
 from utils.utils import run_subprocess
+from downloader.Downloader import Downloader
 
-class AsperaDownloader:
-    def __init__(self, collection, logger, user, password, temp_dir) -> None:
-        self.collection = collection
-        self.logger = logger
+class AsperaDownloader(Downloader):
+    def __init__(self, collection, logger, temp_dir, cache_dir, user=None, password=None) -> None:
+        super(AsperaDownloader, self).__init__(collection=collection, logger=logger, temp_dir=temp_dir, cache_dir=cache_dir, user=user, password=password)
         self.user = user
         self.password = password
-        self.temp_dir = temp_dir
     
     def run(self):
         with open("datasets/datasets.yaml", "r") as file:

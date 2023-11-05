@@ -1,4 +1,4 @@
-# CoGMI_downloader [1.1.0]
+# CoGMI_downloader [2.0.0]
 Tool for automatic download and BIDS conversion of TCIA and OpenNeuro datasets.
 
 ## Table of Contents
@@ -21,7 +21,7 @@ Alternatively docker can be used.
 # Arguments
 
 `--collection`: 
-The name of the collection which should be downloaded. Alternatively a .yaml file containing a list of collections for batch-processing of multiple datasets. An example can be seend in "collections.yaml".
+The name of the collection which should be downloaded. Alternatively a .yaml file containing a list of collections for batch-processing of multiple datasets. An example can be seen in "config/collections.yaml".
 
 `--output`:
 The output directory for the data. Default: "./output"
@@ -32,12 +32,8 @@ The directory where the data is stored temporarily, e.g. for downloading (before
 `--cache_dir`:
 Directory which is used for the output of the logs and the http cache. Default: "~/.cache/tcia_downloader"
 
-
-`--user`:
-The username of a TCIA acount. Needed when restricted collections are accessed.
-
-`--password`:
-The password of a TCIA acount. Needed when restricted collections are accessed.
+`--credentials`:
+Path to credentials.yaml file containing the credentials (seperate for each downloader). Default is "config/credentials.yaml"
 
 `--bids`:
 If this argument is given the dataset(s) will be converted to bids after the download (if the required data for the conversion is given in datasets)
@@ -50,7 +46,7 @@ If this argument is added the output folder will be automatically compressed.
 ## Basic usage
 The following command will start the downloader with the given arguments.
 ```bash
-python downloader.py --collection COLLECTION [--output OUTPUT] [--temp_dir TEMP_DIR] [--cache_dir CACHE_DIR] [--user USER] [--password PASSWORD] [--bids] [--compress]
+python downloader.py --collection COLLECTION [--output OUTPUT] [--temp_dir TEMP_DIR] [--cache_dir CACHE_DIR] [--credentials CREDENTIALS_FILE] [--bids] [--compress]
 ```
 The downloader will choose the appropriate downloader for the given collection (based on datasets/datasets.yaml). If the collection cannot be found it will fallback to donwloading via the nbia REST API and attempt a download of the collection. BIDS conversion is not possible in this case.
 
@@ -80,7 +76,7 @@ By using docker you can avoid the installation of any dependencies and achieve h
 
 The container can be started by executing:
 ```Bash
-docker run -v ./output:/downloader/output -v ./temp_dir:/downloader/temp_dir -v ./cache_dir:/downloader/cache_dir -v ./collections.yaml:/downloader/collections.yaml ydkq4eu2vrqc2uuy8x3c/cogmi_downloader:latest --collection COLLECTION [--user USER] [--password PASSWORD] [--bids] [--compress]
+docker run -v ./output:/URT/output -v ./temp_dir:/URT/temp_dir [-v ./cache_dir:/URT/cache_dir] [-v ./config:/URT/config] ydkq4eu2vrqc2uuy8x3c/cogmi_downloader:latest --collection COLLECTION [--credentials CREDENTIALS_FILE] [--bids] [--compress]
 ```
 In the case of docker the output, temporary directory and cache directory can be changed by modifying the mounted volumes in the docker run command. E.g. replacing "./output:/downloader/output" by "~/output:/downloader/output" will move the output folder to the home directory.
 
@@ -104,7 +100,7 @@ The arguments and volumes can be changed in the compose.yaml file.
 Singularity is supported as well. The following command can be used to pull the docker image from dockerhub, convert it to the singularity image format .sif and run it:
 
 ```bash
-singularity run --cleanenv --writable-tmpfs --no-home --bind ./output:/downloader/output --bind ./temp_dir:/downloader/temp_dir --bind ./cache_dir:/downloader/cache_dir --bind ./collections.yaml:/downloader/collections.yaml docker://ydkq4eu2vrqc2uuy8x3c/cogmi_downloader:latest --collection COLLECTION [--user USER] [--password PASSWORD] [--bids] [--compress]
+singularity run --cleanenv --writable-tmpfs --no-home --bind ./output:/downloader/output --bind ./temp_dir:/downloader/temp_dir [--bind ./cache_dir:/downloader/cache_dir] [--bind ./config:/URT/config] docker://ydkq4eu2vrqc2uuy8x3c/cogmi_downloader:latest --collection COLLECTION [--credentials CREDENTIALS_FILE] [--bids] [--compress]
 ```
 
 Similar to docker, the output folder can be changed by changing the path of the mounted directories.
@@ -112,47 +108,25 @@ Similar to docker, the output folder can be changed by changing the path of the 
 # Changelog
 Only the last version updates are indicated here. The full changelog can be found in the CHANGELOG.md.
 
-## [1.1.0] - 2021.10.16
+## [2.0.0] - 2021.11.05
 
 ### Added
 - Automatic creation of dseg.tsv for supported datasets
 - Support for dataset: Brats-2021
 - Automatically removes unwanted Patients from BTC_preop and BTC_postop
+- Modules: allow arbitrary modifications of the downloaded datasets
+- Credentials file supporting seperate credentials for every downloader
 
 ### Changed
 - Readme.md: error in docker and singularity command (mounting collections.yaml)
 - Minor changes in logger
+- Increased modularity of the downloaders
+- Downloader class: every downloader has to inherit from "Downloader"
+- Numerous enhancements concerning readability and simplicity
+- Manual download represented by the "Manual" downloader class instead of "none"
+- Changed format of datasets in datasets.yaml
 
-## [1.0.2] - 2023.10.13
-### Added
-- Docker image now compatible with Singularity
-
-
-## [1.0.1] - 2023.09.28
-### Changed
-- Bugfix in .sh script: fixed error with spaces in arguments
-
-
-## [1.0.0] - 2023.09.26
-
-### Added
-- Aspera integration
-- Openneuro integration using aws-cli (BTC_prepo and BTC_postop datasets)
-- Automatic detection of the correct downloader and source (Openneuroa, aspera, nbia)
-- Dockerfile
-- compose.yaml for docker compose
-- Support for automatic bids conversion
-- Support for lists of datasets in .yaml format: batch download and conversion of datasets
-- Support for datasets which cannot be downloaded automatically (i.e. BraTS)
-
-### Changed
-- Code refactored: better modularity
-- Representation of the datasets in datasets.yaml (previously: config.yaml)
-- Subprocesses: raise exception if subprocess exits with error
-- Subprocesses: output is appended to debug level logger 
-- Bids argument takes no longer a boolean as input
-- Bugfix: error with SeriesDate (some datasets do not contain this field)
-  
 ### Removed
-- Unnecessary imports
-- Removed "mode" argument
+- Username and password are not given as argument anymore
+- Duplicate code: opening dataset.yaml (now opened once during object initialization)
+

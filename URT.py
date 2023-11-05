@@ -1,8 +1,4 @@
 import argparse
-from utils.tcia_downloader import TciaDownloader
-from utils.aspera_downloader import AsperaDownloader
-from utils.openneuro_downloader import OpenneuroDownloader
-from utils.utils import run_subprocess
 from os import path
 import os
 from datetime import datetime
@@ -10,59 +6,68 @@ import shutil
 import logging
 import yaml
 import pandas as pd
+from utils.utils import run_subprocess
+from utils import Modules
+import importlib
 
-version="1.1.0"
+version="2.0.0"
 
-class CoGMIDownloader:
-    def __init__(self, user=None, password=None, root_dir="", tempdir="", logger=None, cache_dir=None, compress=None, mode=None, bids=None, collection_name=None) -> None:
+class URT:
+    def __init__(self, credentials="config/credentials.yaml", root_dir="", temp_dir="", logger=None, cache_dir=None, compress=None, bids=None, collection_name=None) -> None:
         self.logger = logger
         self.root_dir = root_dir
-        self.temp_dir = tempdir
+        self.temp_dir = temp_dir
         self.cache_dir = cache_dir
-        self.user = user
-        self.password = password
         self.compress = compress
-        self.mode = mode
         self.bids = bids
         self.collection_name = collection_name
-        self.collection_dir = os.path.join(root_dir, collection_name)
+        self.collection_dir = os.path.join(temp_dir, collection_name)
+        self.datasets = yaml.safe_load(open("datasets/datasets.yaml", "r"))
+        self.credentials = yaml.safe_load(open(credentials, "r"))
 
     def run(self):
         #collection_temp_dir = path.join(self.temp_dir, collection_name)
         output_file = path.join(self.root_dir, f"{self.collection_name}.tar.gz")
-
+        output_folder = path.join(self.root_dir, f"{self.collection_name}")
         if os.path.exists(output_file):
-            self.logger.warning("Output file already exists. Skipping download and compression.")
+            self.logger.warning(f"Output file ({output_file}) already exists. Skipping download and compression.")
+        elif os.path.exists(output_folder):
+            self.logger.warning(f"Output folder ({output_folder}) already exists. Skipping download.")
         else:    
-            with open("datasets/datasets.yaml", "r") as file:
-                    datasets = yaml.safe_load(file)
 
-            if self.mode=="auto":
-                if self.collection_name in datasets and "downloader" in datasets[self.collection_name]:
-                    self.downloader = datasets[self.collection_name]["downloader"]
-                    self.logger.info(f"Found entry in datasets.yaml. Using mode \"{self.downloader}\" for the download")
-                else:
-                    self.downloader = "nbia"
-                    self.logger.warning("No entry for the collection in datasets.yaml. In this case only download through nbia is supported. Fallback to downloader \"nbia\".")
-
-            if self.downloader=="nbia":
-                downloader = TciaDownloader(user=self.user, password=self.password, logger=self.logger, collection_name=self.collection_name, tempdir=self.temp_dir, cache_dir=self.cache_dir)
-            elif self.downloader=="aspera":
-                downloader = AsperaDownloader(collection=self.collection_name, logger=self.logger, user=self.user, password=self.password, temp_dir=self.temp_dir)
-            elif self.downloader=="openneuro":
-                downloader = OpenneuroDownloader(logger=self.logger, collection=self.collection_name, temp_dir=self.temp_dir)
+            # Get dataset information 
+            if self.collection_name in self.datasets and "downloader" in self.datasets[self.collection_name]:
+                self.downloader = self.datasets[self.collection_name]["downloader"]
+                self.logger.info(f"Found entry in datasets.yaml. Using \"{self.downloader}\" for the download")
+            else:
+                self.downloader = "TciaDownloader"
+                self.logger.warning("No entry for the collection in datasets.yaml. In this case only download through TCIA (DICOM) is supported. Fallback to downloader \"TciaDownloader\".")
             
-            if self.downloader != "none":
-                downloader.run()
+            # Get user and password
+            if self.downloader in self.credentials and "user" in self.credentials[self.downloader] and "password" in self.credentials[self.downloader]:
+                user = self.credentials[self.downloader]["user"]
+                password = self.credentials[self.downloader]["password"]
+
+                if user == None or password == None:
+                    self.logger.info(f"No credentials given (credentials.yaml contains \"None\" values for {self.downloader}): Only public datasets supported.")
+            else:
+                self.logger.info(f"No entry for {self.downloader} in credentials.yaml: Only public datasets supported.")
+
+            # Start download
+            module = importlib.import_module(f"downloader.{self.downloader}")
+
+            downloader_obj = getattr(module, self.downloader)
+            downloader_instance = downloader_obj(user=user, password=password, logger=self.logger, collection=self.collection_name, temp_dir=self.temp_dir, cache_dir=self.cache_dir)            
+            downloader_instance.run()
             
             # Converts data to the bids format (if bids argument is given and data is in dicom or unordered nifti format)
             self.convert_to_bids()
 
-            # Add dseg.tsv file if applicable
-            self.add_dseg_file()
+            # Add dseg.tsv file if applicable, now added to convert_to_bids() method
+            # self.add_dseg_file()
 
             # if "keep_patients" is defined: remove unwanted patients
-            self.remove_patients()
+            self.execute_modules()
 
 
             # compress
@@ -77,31 +82,28 @@ class CoGMIDownloader:
                     raise e
             else:
                 if self.temp_dir != self.root_dir:
-                    self.logger.info(f"Moving data to output directory '{self.root_dir}'")
+                    self.logger.info(f"Moving data to output directory {self.root_dir}")
                     shutil.move(os.path.join(self.temp_dir, self.collection_name), self.root_dir)
         self.logger.info("Done")
     
     def convert_to_bids(self):
-        with open("datasets/datasets.yaml", "r") as file:
-            datasets = yaml.safe_load(file)
-
         # Convert data if bids argument is given
         if self.bids:
-            format = datasets[self.collection_name]["format"]
+            format = self.datasets[self.collection_name]["format"]
 
             bidsmap_path = os.path.join("datasets", "bidsmaps", f"{self.collection_name}.yaml")
             # Dont convert datasets which are already in bids format (or dont contain valid bidsmaps)
             if format == "bids":
                 self.logger.info("Dataset is already in BIDS format. Nothing to do ...")
-            elif "bids" not in datasets[self.collection_name] or not os.path.exists(os.path.join("datasets", "bidsmaps", f"{self.collection_name}.yaml" )):
+            elif "bids" not in self.datasets[self.collection_name] or not os.path.exists(os.path.join("datasets", "bidsmaps", f"{self.collection_name}.yaml" )):
                 self.logger.warning("No bids conversion possible: missing data for \"bids\" in datasets.yaml")
             elif not os.path.exists(bidsmap_path):
                 self.logger.warning("Bidsmap not found")
             # Convert dataset
             else:
                 # Get relevant data from datasets.yaml and paths
-                session_prefix = datasets[self.collection_name]["bids"]["session-prefix"]
-                subject_prefix = datasets[self.collection_name]["bids"]["subject-prefix"]
+                session_prefix = self.datasets[self.collection_name]["bids"]["session-prefix"]
+                subject_prefix = self.datasets[self.collection_name]["bids"]["subject-prefix"]
                 
                 collection_dir = os.path.join(self.temp_dir, self.collection_name) 
                 bids_collection_dir = os.path.join(self.temp_dir, f"{self.collection_name}_BIDS")
@@ -117,18 +119,31 @@ class CoGMIDownloader:
                 command = ["bidscoiner", "-f", collection_dir, bids_collection_dir]
                 run_subprocess(command, logger=self.logger)
 
+                # add dseg file if applicable
+                self.execute_modules()
+
                 shutil.rmtree(collection_dir)
                 os.rename(bids_collection_dir, collection_dir)
                 self.logger.info("Bids conversion finished")
                 return
-        
-    def add_dseg_file(self):
-        with open("datasets/datasets.yaml", "r") as file:
-            datasets = yaml.safe_load(file)
-        
-        if self.collection_name in datasets and "bids" in datasets[self.collection_name] and "masks" in datasets[self.collection_name]["bids"]:
+    
+    def execute_modules(self):        
+        if self.collection_name in self.datasets and "modules" in self.datasets[self.collection_name]:
+            modules = self.datasets[self.collection_name]["modules"]
+            for module in modules:
+                name = module["name"]
+                try:
+                    data = module["data"]
+                except:
+                    data = None
+                function_obj = getattr(Modules, name)
+                function_obj(self, data)
+        return
+    
+    def add_dseg_file(self):        
+        if self.collection_name in self.datasets and "bids" in self.datasets[self.collection_name] and "masks" in self.datasets[self.collection_name]["bids"]:
             self.logger.info("Adding dseg.tsv file")
-            masks = datasets[self.collection_name]["bids"]["masks"]
+            masks = self.datasets[self.collection_name]["bids"]["masks"]
             masks_pd_compatible = {
                 "index": [],
                 "name": [],
@@ -146,23 +161,8 @@ class CoGMIDownloader:
             # Write the DataFrame to a .tsv file
             masks_df.to_csv(os.path.join(self.collection_dir, 'dseg.tsv'), sep='\t', index=False)
         return
-
-    def remove_patients(self):
-        with open("datasets/datasets.yaml", "r") as file:
-            datasets = yaml.safe_load(file)
-
-        if self.collection_name in datasets and "keep_patients" in datasets[self.collection_name]:
-            self.logger.info(f"Removing unwanted Patients in {self.collection_dir}")
-            patients = datasets[self.collection_name]["keep_patients"]
-            for root, dirs, file in os.walk(self.collection_dir):
-                for dir in dirs:
-                    if dir not in patients:
-                        folder = os.path.join(root, dir)
-                        self.logger.debug(f"Removing folder: {folder}")
-                        shutil.rmtree(os.path.join(root, dir))
             
 
-    
 
 def get_logger(verbosity, log_dir):
     logger = logging.getLogger(__name__)
@@ -203,8 +203,7 @@ def main():
     parser.add_argument('--output', '-o', type=str, default='output', required=False, help='Output directory')
     parser.add_argument('--cache_dir', '-l', type=str, default=os.path.join(os.path.expanduser("~"), ".cache", "tcia_downloader"), required=False, help='Directory for cached files and logs. Default is ~/.cache/tcia_downloader')
     parser.add_argument('--temp_dir', '-t', type=str, default=None, required=False, help='Temporary directory for downloading')
-    parser.add_argument('--user', '-u', type=str, default=None, required=False, help='Username for TCIA')
-    parser.add_argument('--password', '-p', type=str, default=None, required=False, help='Password for TCIA')
+    parser.add_argument('--credentials', '-u', type=str, default="config/credentials.yaml", required=False, help='Username for TCIA')
     parser.add_argument('--compress', '-c', action='store_true', default=False, required=False, help='Choose whether to compress the downloaded data.')
     parser.add_argument('--bids', '-b', action='store_true', default=False, required=False, help='Choose whether to convert the downloaded data to BIDS format.')
     parser.add_argument('--verbosity', '-v', type=str, default="INFO", required=False, help="Choose the level of verbosity from [DEBUG, INFO, WARNING, ERROR, CRITICAL]. Default is 'INFO'")
@@ -212,28 +211,20 @@ def main():
         
     collection_name = args.collection
     output = os.path.normpath(args.output)
-    user = args.user
-    password = args.password
     compress = args.compress
     verbosity = args.verbosity
     cache_dir = args.cache_dir
+    credentials = args.credentials
     log_dir = os.path.join(cache_dir, "logs") 
     os.makedirs(log_dir, exist_ok=True)
     temp_dir = args.output if args.temp_dir == None else args.temp_dir
     bids = args.bids
-    mode = "auto"
     
     if not verbosity in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
         raise Exception("Invalid level of verbosity.")
     
     logger = get_logger(verbosity=verbosity, log_dir=log_dir)
     logger.info(f"CoGMI downloader version {version} ")
-    
-    if mode not in ["nbia", "aspera", "openneuro", "auto"]:
-        raise AssertionError("Mode not supported. Check the documentation again")
-
-    if user == None or args.password == None:
-        logger.info("No username or password provided. Downloading public data only.")
 
     if not os.path.exists(output):
         os.makedirs(output)
@@ -253,12 +244,12 @@ def main():
             for d in dataset_list:
                 logger.info(f"Starting with collection no. {i} from \"{collection_name}\": {d}")
                 collection_name = d
-                downloader = CoGMIDownloader(user=user, password=password, root_dir=output, tempdir=temp_dir, logger=logger, cache_dir=cache_dir, compress=compress, mode=mode, bids=bids, collection_name=collection_name)
+                downloader = URT(credentials=credentials, root_dir=output, temp_dir=temp_dir, logger=logger, cache_dir=cache_dir, compress=compress, bids=bids, collection_name=collection_name)
                 downloader.run()
         
         else:
             logger.info(f"Starting with collection: {collection_name}")
-            downloader = CoGMIDownloader(user=user, password=password, root_dir=output, tempdir=temp_dir, logger=logger, cache_dir=cache_dir, compress=compress, mode=mode, bids=bids, collection_name=collection_name)
+            downloader = URT(credentials=credentials, root_dir=output, temp_dir=temp_dir, logger=logger, cache_dir=cache_dir, compress=compress, bids=bids, collection_name=collection_name)
             downloader.run()
     except Exception as e:
         logger.error(f"An error occurred during download of collection {collection_name}: {e}")
