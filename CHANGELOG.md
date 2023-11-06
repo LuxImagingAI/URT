@@ -2,7 +2,7 @@ This changelog follows the Semantic Versioning convention (version 2.0.0)
 
 # Changelog
 
-## [2.0.0] - 2021.11.05
+## [2.0.0] - 2023.11.05
 
 ### Added
 - Automatic creation of dseg.tsv for supported datasets

@@ -108,7 +108,7 @@ Similar to docker, the output folder can be changed by changing the path of the 
 # Changelog
 Only the last version updates are indicated here. The full changelog can be found in the CHANGELOG.md.
 
-## [2.0.0] - 2021.11.05
+## [2.0.0] - 2023.11.05
 
 ### Added
 - Automatic creation of dseg.tsv for supported datasets
