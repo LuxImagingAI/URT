@@ -51,6 +51,8 @@ class URT:
                 if user == None or password == None:
                     self.logger.info(f"No credentials given (credentials.yaml contains \"None\" values for {self.downloader}): Only public datasets supported.")
             else:
+                user = None
+                password = None
                 self.logger.info(f"No entry for {self.downloader} in credentials.yaml: Only public datasets supported.")
 
             # Start download
