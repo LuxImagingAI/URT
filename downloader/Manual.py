@@ -1,7 +1,7 @@
 import yaml
 import subprocess
 import os
-from Downloader import Downloader
+from downloader.Downloader import Downloader
 from utils.utils import run_subprocess
 
 
