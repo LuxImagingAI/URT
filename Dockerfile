@@ -12,8 +12,8 @@ RUN curl -L -O "https://github.com/conda-forge/miniforge/releases/download/23.3.
     /mambaforge/bin/mamba init bash
 
 # Mamba setup
-COPY environment.yaml /downloader/environment.yaml
-RUN mamba env create -f /downloader/environment.yaml --quiet
+COPY environment.yaml /URT/environment.yaml
+RUN mamba env create -f /URT/environment.yaml --quiet
 
 # Install aspera-cli
 RUN gem install aspera-cli &&\
@@ -37,10 +37,10 @@ COPY URT.py /URT/URT.py
 COPY datasets /URT/datasets
 COPY config /URT/config
 
-RUN chmod -R a+rwx /downloader
+RUN chmod -R a+rwx /URT
 
 RUN echo "#!/bin/bash" > /startup.sh &&\
     echo "export HOME=/root" >> /startup.sh &&\
     chmod a+x /startup.sh
 
-ENTRYPOINT ["/bin/bash",  "--login", "-c", "source /startup.sh && cd /URT && /mambaforge/bin/mamba run --no-capture-output -n CoGMI_downloader python URT.py \"$0\" \"$@\" --output /URT/output --temp_dir /URT/temp_dir --cache_dir /URT/cache_dir"]
+ENTRYPOINT ["/bin/bash",  "--login", "-c", "source /startup.sh && cd /URT && /mambaforge/bin/mamba run --no-capture-output -n CoGMI_downloader python URT.py \"$0\" \"$@\" --output /URT/output --temp_dir /URT/temp --cache_dir /URT/cache"]

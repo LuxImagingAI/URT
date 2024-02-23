@@ -2,14 +2,15 @@ This changelog follows the Semantic Versioning convention (version 2.0.0)
 
 # Changelog
 
-## [2.0.0] - 2023.11.05
+## [2.0.0] - 2024.02.21
 
 ### Added
 - Automatic creation of dseg.tsv for supported datasets
-- Support for dataset: Brats-2021
-- Automatically removes unwanted Patients from BTC_preop and BTC_postop
+- Support for datasets: Brats-2021, Brain-Tumor-Progression, Burdenko-GBM-Progression, EGD
 - Modules: allow arbitrary modifications of the downloaded datasets
 - Credentials file supporting seperate credentials for every downloader
+- Readme.md: additional information about URT, it's architecture, its' usage and supported datasets.
+<!-- - Automatically removes unwanted Patients from BTC_preop and BTC_postop -->
 
 ### Changed
 - Readme.md: error in docker and singularity command (mounting collections.yaml)
@@ -19,6 +20,7 @@ This changelog follows the Semantic Versioning convention (version 2.0.0)
 - Numerous enhancements concerning readability and simplicity
 - Manual download represented by the "Manual" downloader class instead of "none"
 - Changed format of datasets in datasets.yaml
+- Attempt to move errors to the beginning of the process to avoid disruptions during the download process
 
 ### Removed
 - Username and password are not given as argument anymore

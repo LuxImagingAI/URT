@@ -2,32 +2,11 @@ BTC_preop:
   format: bids
   downloader: AwsDownloader
   url: //openneuro.org/ds001226
-  modules:
-  - name: keep_patients
-    data:
-    - sub-PAT05
-    - sub-PAT16
-    - sub-PAT20
-    - sub-PAT22
-    - sub-PAT25
-    - sub-PAT26
-    - sub-PAT27
-    - sub-PAT28
-    - sub-PAT29
-    - sub-PAT31
 
 BTC_postop:
   format: bids
   downloader: AwsDownloader
   url: //openneuro.org/ds002080
-  modules:
-  - keep_patients:
-    - sub-PAT05
-    - sub-PAT16
-    - sub-PAT20
-    - sub-PAT25
-    - sub-PAT26
-    - sub-PAT28
 
 UCSF-PDGM:
   format: nifti
@@ -47,8 +26,17 @@ Brats-2021:
   bids:
     subject-prefix: "BraTS2021_"
     session-prefix: "*"
-    masks:
+  modules:
+  - name: add_dseg_tsv
+    data:
       0: peritumoral edema
       1: GD-enhancing tumor
       2: necrotic and non-enhancing tumor core
+
+Burdenko-GBM-Progression:
+  format: dicom
+  downloader: TciaDownloader
+  bids:
+    subject-prefix: "Burdenko-GBM-"
+    session-prefix: "*"
 

@@ -1,4 +1,3 @@
-import subprocess
 import yaml
 from utils.utils import run_subprocess
 from downloader.Downloader import Downloader

@@ -9,35 +9,46 @@ import pandas as pd
 from utils.utils import run_subprocess
 from utils import Modules
 import importlib
+import ast
 
 version="2.0.0"
 
 class URT:
-    def __init__(self, credentials="config/credentials.yaml", root_dir="", temp_dir="", logger=None, cache_dir=None, compress=None, bids=None, collection_name=None) -> None:
+    def __init__(self, credentials="config/credentials.yaml", root_dir="", temp_dir="", logger=None, cache_dir=None, compress=None, bids=None, dataset_name=None) -> None:
         self.logger = logger
         self.root_dir = root_dir
         self.temp_dir = temp_dir
         self.cache_dir = cache_dir
         self.compress = compress
         self.bids = bids
-        self.collection_name = collection_name
-        self.collection_dir = os.path.join(temp_dir, collection_name)
-        self.datasets = yaml.safe_load(open("datasets/datasets.yaml", "r"))
+        self.collection_name = dataset_name
+        self.collection_dir = os.path.join(temp_dir, dataset_name)
+        self.datasets_file = yaml.safe_load(open("datasets/datasets.yaml", "r"))
         self.credentials = yaml.safe_load(open(credentials, "r"))
+        self.bidsmap_path = os.path.join("datasets", "bidsmaps", f"{self.collection_name}.yaml")
+        self.output_file = path.join(self.root_dir, f"{self.collection_name}.tar.gz")
+        self.instantiate()
 
-    def run(self):
-        #collection_temp_dir = path.join(self.temp_dir, collection_name)
-        output_file = path.join(self.root_dir, f"{self.collection_name}.tar.gz")
-        output_folder = path.join(self.root_dir, f"{self.collection_name}")
-        if os.path.exists(output_file):
-            self.logger.warning(f"Output file ({output_file}) already exists. Skipping download and compression.")
-        elif os.path.exists(output_folder):
-            self.logger.warning(f"Output folder ({output_folder}) already exists. Skipping download.")
+
+    # The input is checked for errors in advance in order to minimize user confusion in cases where datasets cannot be downloaded
+    def instantiate(self):
+        self.logger.info(f"\nInstantiating downloader {self.downloader} for datasets {self.collection_name}")
+
+        # Check if valid bidsmaps are available for the datasets
+        format = self.datasets_file[self.collection_name]["format"]
+        if self.bids and format is not "bids":
+            if "bids" not in self.datasets_file[self.collection_name] or not os.path.exists(self.bidsmap_path):
+                raise Exception("No bids conversion possible: missing data for \"bids\" in datasets.yaml")
+            
+        # Check if output file already exists
+        if os.path.exists(self.output_file):
+            raise Exception(f"Output file ({self.output_file}) already exists. Skipping download and compression.")
+        
         else:    
 
             # Get dataset information 
-            if self.collection_name in self.datasets and "downloader" in self.datasets[self.collection_name]:
-                self.downloader = self.datasets[self.collection_name]["downloader"]
+            if self.collection_name in self.datasets_file and "downloader" in self.datasets_file[self.collection_name]:
+                self.downloader = self.datasets_file[self.collection_name]["downloader"]
                 self.logger.info(f"Found entry in datasets.yaml. Using \"{self.downloader}\" for the download")
             else:
                 self.downloader = "TciaDownloader"
@@ -55,57 +66,60 @@ class URT:
                 password = None
                 self.logger.info(f"No entry for {self.downloader} in credentials.yaml: Only public datasets supported.")
 
-            # Start download
+            # Instantiate the downloader
             module = importlib.import_module(f"downloader.{self.downloader}")
 
             downloader_obj = getattr(module, self.downloader)
-            downloader_instance = downloader_obj(user=user, password=password, logger=self.logger, collection=self.collection_name, temp_dir=self.temp_dir, cache_dir=self.cache_dir)            
-            downloader_instance.run()
+            self.downloader_instance = downloader_obj(user=user, password=password, logger=self.logger, collection=self.collection_name, temp_dir=self.temp_dir, cache_dir=self.cache_dir)
+        return
+    
+
+    def run(self):
+        # Check if output file already exists
+
+        # Download the data
+        self.downloader_instance.run()
+        
+        # Converts data to the bids format (if bids argument is given and data is in dicom or unordered nifti format)
+        self.convert_to_bids()
+
+        # Add dseg.tsv file if applicable, now added to convert_to_bids() method
+        # self.add_dseg_file()
+
+        # if "keep_patients" is defined: remove unwanted patients
+        self.execute_modules()
+
+        # compress
+        if self.compress:
+            self.logger.info("Compressing data")
             
-            # Converts data to the bids format (if bids argument is given and data is in dicom or unordered nifti format)
-            self.convert_to_bids()
-
-            # Add dseg.tsv file if applicable, now added to convert_to_bids() method
-            # self.add_dseg_file()
-
-            # if "keep_patients" is defined: remove unwanted patients
-            self.execute_modules()
-
-
-            # compress
-            if self.compress:
-                self.logger.info("Compressing data")
-                
-                try:
-                    command = ["tar", "-I", "pigz",  "-cf", output_file, "-C", self.temp_dir, self.collection_name, "--remove-files"]
-                    run_subprocess(command, logger=self.logger)
-                except Exception as e:
-                    self.logger.error(f"An error occurred during compression: {e}")
-                    raise e
-            else:
-                if self.temp_dir != self.root_dir:
-                    self.logger.info(f"Moving data to output directory {self.root_dir}")
-                    shutil.move(os.path.join(self.temp_dir, self.collection_name), self.root_dir)
+            try:
+                command = ["tar", "-I", "pigz",  "-cf", self.output_file, "-C", self.temp_dir, self.collection_name, "--remove-files"]
+                run_subprocess(command, logger=self.logger)
+            except Exception as e:
+                self.logger.error(f"An error occurred during compression: {e}")
+                raise e
+        else:
+            if self.temp_dir != self.root_dir:
+                self.logger.info(f"Moving data to output directory {self.root_dir}")
+                shutil.move(os.path.join(self.temp_dir, self.collection_name), self.root_dir)
         self.logger.info("Done")
+
+        return True
     
     def convert_to_bids(self):
         # Convert data if bids argument is given
         if self.bids:
-            format = self.datasets[self.collection_name]["format"]
+            format = self.datasets_file[self.collection_name]["format"]
 
-            bidsmap_path = os.path.join("datasets", "bidsmaps", f"{self.collection_name}.yaml")
-            # Dont convert datasets which are already in bids format (or dont contain valid bidsmaps)
+            
+            # Convert dataset
             if format == "bids":
                 self.logger.info("Dataset is already in BIDS format. Nothing to do ...")
-            elif "bids" not in self.datasets[self.collection_name] or not os.path.exists(os.path.join("datasets", "bidsmaps", f"{self.collection_name}.yaml" )):
-                self.logger.warning("No bids conversion possible: missing data for \"bids\" in datasets.yaml")
-            elif not os.path.exists(bidsmap_path):
-                self.logger.warning("Bidsmap not found")
-            # Convert dataset
             else:
                 # Get relevant data from datasets.yaml and paths
-                session_prefix = self.datasets[self.collection_name]["bids"]["session-prefix"]
-                subject_prefix = self.datasets[self.collection_name]["bids"]["subject-prefix"]
+                session_prefix = self.datasets_file[self.collection_name]["bids"]["session-prefix"]
+                subject_prefix = self.datasets_file[self.collection_name]["bids"]["subject-prefix"]
                 
                 collection_dir = os.path.join(self.temp_dir, self.collection_name) 
                 bids_collection_dir = os.path.join(self.temp_dir, f"{self.collection_name}_BIDS")
@@ -130,8 +144,8 @@ class URT:
                 return
     
     def execute_modules(self):        
-        if self.collection_name in self.datasets and "modules" in self.datasets[self.collection_name]:
-            modules = self.datasets[self.collection_name]["modules"]
+        if self.collection_name in self.datasets_file and "modules" in self.datasets_file[self.collection_name]:
+            modules = self.datasets_file[self.collection_name]["modules"]
             for module in modules:
                 name = module["name"]
                 try:
@@ -140,30 +154,7 @@ class URT:
                     data = None
                 function_obj = getattr(Modules, name)
                 function_obj(self, data)
-        return
-    
-    def add_dseg_file(self):        
-        if self.collection_name in self.datasets and "bids" in self.datasets[self.collection_name] and "masks" in self.datasets[self.collection_name]["bids"]:
-            self.logger.info("Adding dseg.tsv file")
-            masks = self.datasets[self.collection_name]["bids"]["masks"]
-            masks_pd_compatible = {
-                "index": [],
-                "name": [],
-                "mapping": []
-            }
-            i=0
-            for key, value in masks.items():
-                masks_pd_compatible["index"].append(i)
-                masks_pd_compatible["name"].append(value)
-                masks_pd_compatible["mapping"].append(key)
-                i+=1
-            
-            masks_df = pd.DataFrame(masks_pd_compatible)
-
-            # Write the DataFrame to a .tsv file
-            masks_df.to_csv(os.path.join(self.collection_dir, 'dseg.tsv'), sep='\t', index=False)
-        return
-            
+        return        
 
 
 def get_logger(verbosity, log_dir):
@@ -201,8 +192,8 @@ def get_logger(verbosity, log_dir):
 def main():
     # parse arguments
     parser = argparse.ArgumentParser(description='Download data from TCIA')
-    parser.add_argument('--collection', '-co', type=str, required=True, help='TCIA collection name')
-    parser.add_argument('--output', '-o', type=str, default='output', required=False, help='Output directory')
+    parser.add_argument('--dataset', '-co', type=str, required=True, help='Dataset name, dataset names as list or path to .yaml file')
+    parser.add_argument('--output_dir', '-o', type=str, default='output', required=False, help='Output directory')
     parser.add_argument('--cache_dir', '-l', type=str, default=os.path.join(os.path.expanduser("~"), ".cache", "tcia_downloader"), required=False, help='Directory for cached files and logs. Default is ~/.cache/tcia_downloader')
     parser.add_argument('--temp_dir', '-t', type=str, default=None, required=False, help='Temporary directory for downloading')
     parser.add_argument('--credentials', '-u', type=str, default="config/credentials.yaml", required=False, help='Username for TCIA')
@@ -211,8 +202,8 @@ def main():
     parser.add_argument('--verbosity', '-v', type=str, default="INFO", required=False, help="Choose the level of verbosity from [DEBUG, INFO, WARNING, ERROR, CRITICAL]. Default is 'INFO'")
     args = parser.parse_args()
         
-    collection_name = args.collection
-    output = os.path.normpath(args.output)
+    datasets = args.collection
+    output = os.path.normpath(args.output_dir)
     compress = args.compress
     verbosity = args.verbosity
     cache_dir = args.cache_dir
@@ -226,7 +217,7 @@ def main():
         raise Exception("Invalid level of verbosity.")
     
     logger = get_logger(verbosity=verbosity, log_dir=log_dir)
-    logger.info(f"CoGMI downloader version {version} ")
+    logger.info(f"URT downloader version {version} ")
 
     if not os.path.exists(output):
         os.makedirs(output)
@@ -234,30 +225,46 @@ def main():
     if not os.path.exists(temp_dir):
         os.makedirs(temp_dir)
 
-    
+
+    # If yaml file is given
+    if datasets.endswith(".yaml"):
+        with open(datasets) as f:
+            dataset_list = yaml.safe_load(f)
+
+    # If (string-) list is given
+    elif datasets.startswith("["):
+        dataset_list = ast.literal_eval(datasets)
+    else:
+        dataset_list = [datasets]
+
+    i = 1
+    downloader_list = []
+    successful_downloads = []
+    failed_downloads = []
+
+    for d in dataset_list:
+        logger.info(f"Starting with collection no. {i} from \"{datasets}\": {d}")
+        dataset = d
+        try:
+            downloader_list.append(downloader = URT(credentials=credentials, root_dir=output, temp_dir=temp_dir, logger=logger, cache_dir=cache_dir, compress=compress, bids=bids, dataset_name=dataset))
+        except Exception as e:
+            logger.warning(f"Dataset \"{dataset}\" cannot be downloaded: {e}")
+            failed_downloads.append(dataset)
 
     try:
-
-        # If list is given convert all datasets
-        if collection_name.endswith(".yaml"):
-            with open(collection_name) as f:
-                dataset_list = yaml.safe_load(f)
-            i = 1
-            for d in dataset_list:
-                logger.info(f"Starting with collection no. {i} from \"{collection_name}\": {d}")
-                collection_name = d
-                downloader = URT(credentials=credentials, root_dir=output, temp_dir=temp_dir, logger=logger, cache_dir=cache_dir, compress=compress, bids=bids, collection_name=collection_name)
-                downloader.run()
-        
-        else:
-            logger.info(f"Starting with collection: {collection_name}")
-            downloader = URT(credentials=credentials, root_dir=output, temp_dir=temp_dir, logger=logger, cache_dir=cache_dir, compress=compress, bids=bids, collection_name=collection_name)
-            downloader.run()
+        for downloader in downloader_list:
+            downloader.run() 
     except Exception as e:
-        logger.error(f"An error occurred during download of collection {collection_name}: {e}")
-        raise e
-
-
+        logger.error(f"An error occurred during download of collections {dataset}: {e}")
+        failed_downloads.append(dataset)
+    finally:
+        successful_downloads.append(dataset)
     
+    logger.info("\n --- finished --- \nSuccessful datasets:")
+    for dataset in successful_downloads: logger.info(f"{dataset}")
+
+    if len(failed_downloads) > 0: 
+        logger.warning("\nFailed datasets:")
+        for dataset in failed_downloads: logger.warning(f"{dataset}")
 
 main()

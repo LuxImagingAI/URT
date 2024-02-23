@@ -3,10 +3,10 @@ services:
     image: ydkq4eu2vrqc2uuy8x3c/cogmi_downloader:latest
     volumes:
     # These define the mapping of the volumes inside the container
-      - ./output:/downloader/output
-      - ./temp_dir:/downloader/temp_dir
-      - ./cache_dir:/downloader/cache_dir
-      - ./collections.yaml:/downloader/collections.yaml
+      - ./output:/URT/output
+      - ./temp:/URT/temp
+      - ./cache:/URT/cache
+      - ./config:/URT/config
     command:
     # Here the arguments can be given to the docker container
       - --collection=BTC_postop

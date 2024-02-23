@@ -22,6 +22,7 @@ class TciaAPI:
         self.user = user
         self.password = pw
         self.generate_tokens()
+
     
     def dict_to_dataframe(func):
         def wrapper(*args, **kwargs):
@@ -244,6 +245,9 @@ class TciaDownloader(Downloader):
         self.tcia_api = TciaAPI(user=user, pw=password, logger=logger, cache_dir=cache_dir)
         self.series_metadata_df = None
         self.seriesDF = None
+
+        # check if collection exists
+        self.tcia_api.check_collection(self.collection)
     
     
     def convert_StudyInstance_path(self, root_path, SeriesUID):  
@@ -460,9 +464,6 @@ class TciaDownloader(Downloader):
     def run(self):
         
         os.makedirs(self.temp_dir, exist_ok=True)
-
-        # check if collection exists
-        self.tcia_api.check_collection(self.collection)
         
         # Get series from tcia api as dataframe
         self.seriesDF = self.tcia_api.getSeriesDF(self.collection)

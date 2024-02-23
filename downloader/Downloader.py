@@ -8,5 +8,7 @@ class Downloader:
         self.user = user
         self.password = password
 
+def run(self):
+    raise Exception(f"Run method not implemented")
     
 
