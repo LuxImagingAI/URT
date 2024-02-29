@@ -11,7 +11,7 @@ BTC_postop:
 UCSF-PDGM:
   format: nifti
   downloader: AsperaDownloader
-  url: https://faspex.cancerimagingarchive.net/aspera/faspex/external_deliveries/357?passcode=e722861fdd0278611166a64f0b66e46d9e6ae17c
+  url: https://faspex.cancerimagingarchive.net/aspera/faspex/public/package?context=eyJyZXNvdXJjZSI6InBhY2thZ2VzIiwidHlwZSI6ImV4dGVybmFsX2Rvd25sb2FkX3BhY2thZ2UiLCJpZCI6Ijc1OCIsInBhc3Njb2RlIjoiYTQ5MTc4MTEzZWZmY2EwNjY3ZTlhY2JmODA2NDM2NzE0MGY3YTQxYyIsInBhY2thZ2VfaWQiOiI3NTgiLCJlbWFpbCI6ImhlbHBAY2FuY2VyaW1hZ2luZ2FyY2hpdmUubmV0In0=&redirected=true
 
 Brain-Tumor-Progression:
   format: dicom
@@ -20,18 +20,18 @@ Brain-Tumor-Progression:
     subject-prefix: "PGBM-"
     session-prefix: "*"
 
-Brats-2021:
-  format: nifti
-  downloader: Manual
-  bids:
-    subject-prefix: "BraTS2021_"
-    session-prefix: "*"
-  modules:
-  - name: add_dseg_tsv
-    data:
-      0: peritumoral edema
-      1: GD-enhancing tumor
-      2: necrotic and non-enhancing tumor core
+# Brats-2021:
+#   format: nifti
+#   downloader: Manual
+#   bids:
+#     subject-prefix: "BraTS2021_"
+#     session-prefix: "*"
+#   modules:
+#   - name: add_dseg_tsv
+#     data:
+#       0: peritumoral edema
+#       1: GD-enhancing tumor
+#       2: necrotic and non-enhancing tumor core
 
 Burdenko-GBM-Progression:
   format: dicom
@@ -40,3 +40,40 @@ Burdenko-GBM-Progression:
     subject-prefix: "Burdenko-GBM-"
     session-prefix: "*"
 
+Brats-2023-GLI-train:
+  format: nifti
+  downloader: SynapseDownloader
+  id: syn51514132
+  bids:
+    subject-prefix: "BraTS-GLI-"
+    session-prefix: "*"
+  modules:
+  - name: add_dseg_tsv
+    data:
+      0: peritumoral edema
+      1: GD-enhancing tumor
+      2: necrotic and non-enhancing tumor core
+
+Brats-2023-GLI-validation:
+  format: nifti
+  downloader: SynapseDownloader
+  id: syn51514110
+  bids:
+    subject-prefix: "BraTS-GLI-"
+    session-prefix: "*"
+  modules:
+  - name: add_dseg_tsv
+    data:
+      0: peritumoral edema
+      1: GD-enhancing tumor
+      2: necrotic and non-enhancing tumor core
+
+Brats-2023-SSA-train:
+  format: nifti
+  downloader: SynapseDownloader
+  id: syn51692615
+
+Brats-2023-SSA-validation:
+  format: nifti
+  downloader: SynapseDownloader
+  id: syn52045895

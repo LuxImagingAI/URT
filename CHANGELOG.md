@@ -6,10 +6,13 @@ This changelog follows the Semantic Versioning convention (version 2.0.0)
 
 ### Added
 - Automatic creation of dseg.tsv for supported datasets
-- Support for datasets: Brats-2021, Brain-Tumor-Progression, Burdenko-GBM-Progression, EGD
+- Support for datasets: Brats-2023-GLI, Brats-2023-SSA, Brain-Tumor-Progression, Burdenko-GBM-Progression, EGD
 - Modules: allow arbitrary modifications of the downloaded datasets
 - Credentials file supporting seperate credentials for every downloader
 - Readme.md: additional information about URT, it's architecture, its' usage and supported datasets.
+- Detection for already downloaded and corrupted datasets
+- Automatic detection of compressed and uncompressed datasets: avoids re-downloads e.g. if compressed dataset is available and uncompressed is supposed to be downloaded
+- SynapseDownloader for downloading datasets from Synapse via synapseclient
 <!-- - Automatically removes unwanted Patients from BTC_preop and BTC_postop -->
 
 ### Changed
@@ -21,6 +24,7 @@ This changelog follows the Semantic Versioning convention (version 2.0.0)
 - Manual download represented by the "Manual" downloader class instead of "none"
 - Changed format of datasets in datasets.yaml
 - Attempt to move errors to the beginning of the process to avoid disruptions during the download process
+- Download and conversion of multiple datasets more robust
 
 ### Removed
 - Username and password are not given as argument anymore

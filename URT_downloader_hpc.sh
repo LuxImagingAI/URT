@@ -6,7 +6,7 @@
 #SBATCH --time=0-36:00:00
 #SBATCH -p batch
 
-conda activate CoGMI_downloader
+conda activate URT
 
 # Name of the collection
 collection="UCSF-PDGM"

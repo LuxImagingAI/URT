@@ -1,15 +1,12 @@
 import argparse
-from os import path
 import os
 from datetime import datetime
 import shutil
 import logging
 import yaml
-import pandas as pd
-from utils.utils import run_subprocess
+from utils.utils import run_subprocess, compress, decompress, compute_checksum
 from utils import Modules
 import importlib
-import ast
 
 version="2.0.0"
 
@@ -21,61 +18,99 @@ class URT:
         self.cache_dir = cache_dir
         self.compress = compress
         self.bids = bids
-        self.collection_name = dataset_name
-        self.collection_dir = os.path.join(temp_dir, dataset_name)
-        self.datasets_file = yaml.safe_load(open("datasets/datasets.yaml", "r"))
-        self.credentials = yaml.safe_load(open(credentials, "r"))
-        self.bidsmap_path = os.path.join("datasets", "bidsmaps", f"{self.collection_name}.yaml")
-        self.output_file = path.join(self.root_dir, f"{self.collection_name}.tar.gz")
+
+        self.dataset_name = dataset_name
+
+        self.dataset_folder = dataset_name
+        if bids:
+            self.dataset_folder += "_BIDS"
+
+        self.dataset_output_name = self.dataset_folder
+        if compress:
+            self.dataset_output_name += ".tar.gz"
+        
+
+        self.temp_collection_dir = os.path.join(temp_dir, self.dataset_folder)
+        # self.temp_collection_dir_bids = os.path.join(self.temp_dir, f"{self.dataset_name_bids}")
+
+        self.dataset_output_folder_path = os.path.join(root_dir, self.dataset_folder)
+        # self.output_collection_dir_bids = os.path.join(self.root_dir, f"{self.dataset_name_bids}")
+
+        self.dataset_output_name_path = os.path.join(self.root_dir, self.dataset_output_name)
+        # self.output_file_bids = path.join(self.root_dir, f"{self.dataset_name}_BIDS.tar.gz")
+
+        self.bidsmap_path = os.path.join("datasets", "bidsmaps", f"{self.dataset_name}.yaml")
+        self.file_hashes_path = os.path.join(self.root_dir, ".file_hashes.yaml")
+        self.credentials = credentials
         self.instantiate()
 
 
     # The input is checked for errors in advance in order to minimize user confusion in cases where datasets cannot be downloaded
     def instantiate(self):
-        self.logger.info(f"\nInstantiating downloader {self.downloader} for datasets {self.collection_name}")
+        
+        # Open relevant files
+        if not os.path.isfile(self.file_hashes_path):
+            self.logger.debug(f"\"{self.file_hashes_path}\" does not yet exists: creating file.")
+            with open(self.file_hashes_path, "w") as f:
+                yaml.safe_dump({"placeholder":"placeholder"}, f)
 
+        with open(self.file_hashes_path, "r") as f:
+                self.file_hashes = yaml.safe_load(f)
+
+        self.logger.debug(f"Check for validity of stored datasets.")
+        try:
+            for key, value in self.file_hashes.items():
+                self.check_path_hash(os.path.join(self.root_dir, key), key)
+        except:
+            pass
+
+        
+        with open("datasets/datasets.yaml", "r") as f:
+            self.datasets_file = yaml.safe_load(f)
+
+        # if self.bids:
+        #     if self.compress:
+        #         self.dataset_output_name = self.dataset_name
+                
         # Check if valid bidsmaps are available for the datasets
-        format = self.datasets_file[self.collection_name]["format"]
-        if self.bids and format is not "bids":
-            if "bids" not in self.datasets_file[self.collection_name] or not os.path.exists(self.bidsmap_path):
+        format = self.datasets_file[self.dataset_name]["format"]
+        if self.bids and format != "bids":
+            if "bids" not in self.datasets_file[self.dataset_name] or not os.path.exists(self.bidsmap_path):
+                # print(f"\"bids\" not in self.datasets_file[self.dataset_name]", "bids" not in self.datasets_file[self.dataset_name])
+                # print(f"not os.path.exists(self.bidsmap_path)", not os.path.exists(self.bidsmap_path))
                 raise Exception("No bids conversion possible: missing data for \"bids\" in datasets.yaml")
             
-        # Check if output file already exists
-        if os.path.exists(self.output_file):
-            raise Exception(f"Output file ({self.output_file}) already exists. Skipping download and compression.")
-        
-        else:    
+        # Get dataset information 
+        if self.dataset_name in self.datasets_file and "downloader" in self.datasets_file[self.dataset_name]:
+            self.downloader = self.datasets_file[self.dataset_name]["downloader"]
+            self.logger.info(f"Found entry in datasets.yaml. Using \"{self.downloader}\" for the download")
+        else:
+            self.downloader = "TciaDownloader"
+            self.logger.warning("No entry for the collection in datasets.yaml. In this case only download through TCIA (DICOM) is supported. Fallback to downloader \"TciaDownloader\".")
 
-            # Get dataset information 
-            if self.collection_name in self.datasets_file and "downloader" in self.datasets_file[self.collection_name]:
-                self.downloader = self.datasets_file[self.collection_name]["downloader"]
-                self.logger.info(f"Found entry in datasets.yaml. Using \"{self.downloader}\" for the download")
-            else:
-                self.downloader = "TciaDownloader"
-                self.logger.warning("No entry for the collection in datasets.yaml. In this case only download through TCIA (DICOM) is supported. Fallback to downloader \"TciaDownloader\".")
-            
-            # Get user and password
-            if self.downloader in self.credentials and "user" in self.credentials[self.downloader] and "password" in self.credentials[self.downloader]:
-                user = self.credentials[self.downloader]["user"]
-                password = self.credentials[self.downloader]["password"]
 
-                if user == None or password == None:
-                    self.logger.info(f"No credentials given (credentials.yaml contains \"None\" values for {self.downloader}): Only public datasets supported.")
-            else:
-                user = None
-                password = None
-                self.logger.info(f"No entry for {self.downloader} in credentials.yaml: Only public datasets supported.")
+        # Instantiate the downloader
+        module = importlib.import_module(f"downloader.{self.downloader}")
 
-            # Instantiate the downloader
-            module = importlib.import_module(f"downloader.{self.downloader}")
-
-            downloader_obj = getattr(module, self.downloader)
-            self.downloader_instance = downloader_obj(user=user, password=password, logger=self.logger, collection=self.collection_name, temp_dir=self.temp_dir, cache_dir=self.cache_dir)
+        downloader_obj = getattr(module, self.downloader)
+        self.downloader_instance = downloader_obj(credentials=self.credentials, logger=self.logger, dataset=self.dataset_name, temp_dir=self.temp_dir, cache_dir=self.cache_dir)
         return
     
 
     def run(self):
-        # Check if output file already exists
+        # Check if data already exists
+        # TODO check for bugs
+        if self.check_path_hash(self.dataset_output_name_path, self.dataset_output_name): 
+            self.logger.info(f"Dataset {self.dataset_output_name} already existing in the output folder")
+            return
+
+        # Check if data only needs to be compressed or decompressed
+        # TODO check for bugs
+        self.logger.debug(f"Checking for existing compressed/uncompressed data")
+        if self.check_for_existing_uncompressed_or_compressed_data(): return
+        
+        # TODO check rare cases, e.g. dataset downloaded but not yet converted and URT tool with the same dataset and --bids option is started
+        # current behavior: re-download dataset and convert it
 
         # Download the data
         self.downloader_instance.run()
@@ -83,34 +118,105 @@ class URT:
         # Converts data to the bids format (if bids argument is given and data is in dicom or unordered nifti format)
         self.convert_to_bids()
 
-        # Add dseg.tsv file if applicable, now added to convert_to_bids() method
-        # self.add_dseg_file()
-
         # if "keep_patients" is defined: remove unwanted patients
         self.execute_modules()
 
         # compress
+        
         if self.compress:
             self.logger.info("Compressing data")
-            
-            try:
-                command = ["tar", "-I", "pigz",  "-cf", self.output_file, "-C", self.temp_dir, self.collection_name, "--remove-files"]
-                run_subprocess(command, logger=self.logger)
-            except Exception as e:
-                self.logger.error(f"An error occurred during compression: {e}")
-                raise e
+            compress(output_file=self.dataset_output_name_path, path=self.temp_dir, input_directory=self.dataset_folder, logger=self.logger)
         else:
             if self.temp_dir != self.root_dir:
                 self.logger.info(f"Moving data to output directory {self.root_dir}")
-                shutil.move(os.path.join(self.temp_dir, self.collection_name), self.root_dir)
+                temp_folder = os.path.join(self.temp_dir, self.dataset_folder)
+                shutil.move(temp_folder, self.root_dir)
         self.logger.info("Done")
+
+        # Add checksum for finished dataset
+        self.add_checksum(self.dataset_output_name_path, self.dataset_output_name)
 
         return True
     
+    def add_checksum(self, path, name):
+        checksum = compute_checksum(path)
+        self.file_hashes[name] = checksum
+        self.logger.debug(f"Added checksum {checksum} for dataset \"{self.dataset_name}\" to checksum file.")
+        with open(self.file_hashes_path, "w") as f:
+            yaml.safe_dump(self.file_hashes, f)
+        return checksum
+    
+    def remove_checksum(self, name):
+        if name in self.file_hashes:
+            checksum = self.file_hashes.pop(name)
+            self.logger.debug(f"Removed checksum {checksum} for dataset \"{self.dataset_name}\" file.")
+            with open(self.file_hashes_path, "w") as f:
+                yaml.safe_dump(self.file_hashes, f)
+
+
+    # TODO commentary+logging
+    def check_for_existing_uncompressed_or_compressed_data(self):
+        # If target is compressed data and uncompressed data exists
+        if self.compress:
+            target_path = self.dataset_output_folder_path
+            target_name = self.dataset_folder
+            self.logger.debug(f"Checking if uncompressed dataset {target_name} is locally available")
+
+            if target_name in self.file_hashes:
+                if self.check_path_hash(target_path, target_name):
+                    self.logger.info(f"Dataset {target_name} already existing in the output folder in uncompressed format. Compressing ...")
+                    compress(output_file=self.dataset_output_name_path, path=self.root_dir, input_directory=target_name, logger=self.logger, remove_files=False)
+                    self.add_checksum(self.dataset_output_name_path, self.dataset_output_name)
+                    return True
+        # If target is uncompressed data and compressed data exists
+        else:
+            target_path = self.dataset_output_name_path + ".tar.gz"
+            target_name = self.dataset_output_name + ".tar.gz"
+            self.logger.debug(f"Checking if compressed dataset {target_name} is locally available")
+
+            if target_name in self.file_hashes:
+                if self.check_path_hash(target_path, target_name):
+                    self.logger.info(f"Dataset {target_name} already existing in the output folder in compressed format. Decompressing ...")
+                    decompress(input_file=target_path, output_directory=self.root_dir, logger=self.logger)                
+                    self.add_checksum(self.dataset_output_name_path, self.dataset_output_name)
+                    return True
+
+        return False
+
+    
+    def check_path_hash(self, path, name):
+
+        if name in self.file_hashes:
+            # If folder does not exists return False (means: not downloaded) and remove the checksum for this dataset from the checksum file
+            if not os.path.isdir(path) and not os.path.isfile(path):
+                self.logger.debug(f"Path is not a file or directory: {path}")
+                self.remove_checksum(name)
+                return False
+        
+            real_hash = self.file_hashes[name]
+            computed_hash = compute_checksum(path)
+
+            if computed_hash == real_hash:
+                self.logger.debug(f"Checksum of local folder {path} is equivalent to checksum of {name}")
+                return True
+            else:
+                # This case only happens when a dataset is downloaded but the hash value is not correct
+                # Datasets which were only partially downloaded (downloader crashed) do not have a hash value yet
+                if dir:
+                    shutil.rmtree(path)
+                else:
+                    os.remove(path)
+                self.logger.warning(f"Detected corrupted dataset. Removing {self.dataset_output_name_path}")
+                return False
+        
+        else:
+            self.logger.debug(f"No entry in  checksum file for {name}")
+            return False
+
     def convert_to_bids(self):
         # Convert data if bids argument is given
         if self.bids:
-            format = self.datasets_file[self.collection_name]["format"]
+            format = self.datasets_file[self.dataset_name]["format"]
 
             
             # Convert dataset
@@ -118,34 +224,34 @@ class URT:
                 self.logger.info("Dataset is already in BIDS format. Nothing to do ...")
             else:
                 # Get relevant data from datasets.yaml and paths
-                session_prefix = self.datasets_file[self.collection_name]["bids"]["session-prefix"]
-                subject_prefix = self.datasets_file[self.collection_name]["bids"]["subject-prefix"]
+                session_prefix = self.datasets_file[self.dataset_name]["bids"]["session-prefix"]
+                subject_prefix = self.datasets_file[self.dataset_name]["bids"]["subject-prefix"]
                 
-                collection_dir = os.path.join(self.temp_dir, self.collection_name) 
-                bids_collection_dir = os.path.join(self.temp_dir, f"{self.collection_name}_BIDS")
+                dataset_temp_dir = os.path.join(self.temp_dir, self.dataset_name) 
+                dataset_temp_dir_bids = os.path.join(self.temp_dir, self.dataset_name+"_BIDS") 
                 plugin = "dcm2niix2bids" if format=="dicom" else "nibabel2bids"
 
                 # Use bidsmapper
                 self.logger.info("Starting bidsmapper")
-                command = ["bidsmapper", "-f", "-a", "-n", subject_prefix, "-m", session_prefix, collection_dir, bids_collection_dir, "-t", bidsmap_path, "-p", plugin]
+                command = ["bidsmapper", "-f", "-a", "-n", subject_prefix, "-m", session_prefix, dataset_temp_dir, dataset_temp_dir_bids, "-t", self.bidsmap_path, "-p", plugin]
                 run_subprocess(command, logger=self.logger)
 
                 # Use bidscoiner
                 self.logger.info("Starting bidscoiner")
-                command = ["bidscoiner", "-f", collection_dir, bids_collection_dir]
+                command = ["bidscoiner", "-f", dataset_temp_dir, dataset_temp_dir_bids]
                 run_subprocess(command, logger=self.logger)
 
                 # add dseg file if applicable
                 self.execute_modules()
 
-                shutil.rmtree(collection_dir)
-                os.rename(bids_collection_dir, collection_dir)
+                shutil.rmtree(dataset_temp_dir)
+                # os.rename(self.dataset_folder, collection_dir)
                 self.logger.info("Bids conversion finished")
                 return
     
     def execute_modules(self):        
-        if self.collection_name in self.datasets_file and "modules" in self.datasets_file[self.collection_name]:
-            modules = self.datasets_file[self.collection_name]["modules"]
+        if self.dataset_name in self.datasets_file and "modules" in self.datasets_file[self.dataset_name]:
+            modules = self.datasets_file[self.dataset_name]["modules"]
             for module in modules:
                 name = module["name"]
                 try:
@@ -154,7 +260,7 @@ class URT:
                     data = None
                 function_obj = getattr(Modules, name)
                 function_obj(self, data)
-        return        
+        return     
 
 
 def get_logger(verbosity, log_dir):
@@ -195,23 +301,26 @@ def main():
     parser.add_argument('--dataset', '-co', type=str, required=True, help='Dataset name, dataset names as list or path to .yaml file')
     parser.add_argument('--output_dir', '-o', type=str, default='output', required=False, help='Output directory')
     parser.add_argument('--cache_dir', '-l', type=str, default=os.path.join(os.path.expanduser("~"), ".cache", "tcia_downloader"), required=False, help='Directory for cached files and logs. Default is ~/.cache/tcia_downloader')
-    parser.add_argument('--temp_dir', '-t', type=str, default=None, required=False, help='Temporary directory for downloading')
+    parser.add_argument('--temp_dir', '-t', type=str, default="temp", required=False, help='Temporary directory for downloading')
     parser.add_argument('--credentials', '-u', type=str, default="config/credentials.yaml", required=False, help='Username for TCIA')
     parser.add_argument('--compress', '-c', action='store_true', default=False, required=False, help='Choose whether to compress the downloaded data.')
     parser.add_argument('--bids', '-b', action='store_true', default=False, required=False, help='Choose whether to convert the downloaded data to BIDS format.')
     parser.add_argument('--verbosity', '-v', type=str, default="INFO", required=False, help="Choose the level of verbosity from [DEBUG, INFO, WARNING, ERROR, CRITICAL]. Default is 'INFO'")
     args = parser.parse_args()
         
-    datasets = args.collection
+    datasets = args.dataset
     output = os.path.normpath(args.output_dir)
     compress = args.compress
     verbosity = args.verbosity
     cache_dir = args.cache_dir
-    credentials = args.credentials
+    credentials_file = args.credentials
     log_dir = os.path.join(cache_dir, "logs") 
     os.makedirs(log_dir, exist_ok=True)
-    temp_dir = args.output if args.temp_dir == None else args.temp_dir
+    temp_dir = args.output_dir if args.temp_dir == None else args.temp_dir
     bids = args.bids
+    
+    if temp_dir == output:
+        raise Exception("Temporary directory and output directory cannot be the same")
     
     if not verbosity in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
         raise Exception("Invalid level of verbosity.")
@@ -230,10 +339,9 @@ def main():
     if datasets.endswith(".yaml"):
         with open(datasets) as f:
             dataset_list = yaml.safe_load(f)
-
     # If (string-) list is given
     elif datasets.startswith("["):
-        dataset_list = ast.literal_eval(datasets)
+        dataset_list = list(map(str.strip, datasets.strip('[]').split(",")))
     else:
         dataset_list = [datasets]
 
@@ -242,29 +350,41 @@ def main():
     successful_downloads = []
     failed_downloads = []
 
-    for d in dataset_list:
-        logger.info(f"Starting with collection no. {i} from \"{datasets}\": {d}")
-        dataset = d
+    with open(credentials_file) as f:
+        credentials = yaml.safe_load(f)
+
+    for dataset in dataset_list:
+        logger.info(f"Starting with dataset no. {i} of {len(dataset_list)}: {dataset}")
+        i += 1
         try:
-            downloader_list.append(downloader = URT(credentials=credentials, root_dir=output, temp_dir=temp_dir, logger=logger, cache_dir=cache_dir, compress=compress, bids=bids, dataset_name=dataset))
+            downloader = URT(credentials=credentials, root_dir=output, temp_dir=temp_dir, logger=logger, cache_dir=cache_dir, compress=compress, bids=bids, dataset_name=dataset)
+            downloader_list.append(downloader)
         except Exception as e:
             logger.warning(f"Dataset \"{dataset}\" cannot be downloaded: {e}")
             failed_downloads.append(dataset)
+            # raise e # only for debugging
 
-    try:
-        for downloader in downloader_list:
-            downloader.run() 
-    except Exception as e:
-        logger.error(f"An error occurred during download of collections {dataset}: {e}")
-        failed_downloads.append(dataset)
-    finally:
-        successful_downloads.append(dataset)
+
+    for downloader in downloader_list:
+        try:
+            downloader.run()
+        except Exception as e:
+            logger.error(f"An error occurred during download of collections {downloader.dataset_name}: {e}")
+            failed_downloads.append(downloader.dataset_name)
+            # raise e # only for debugging
+        else:
+            successful_downloads.append(downloader.dataset_name)
     
-    logger.info("\n --- finished --- \nSuccessful datasets:")
-    for dataset in successful_downloads: logger.info(f"{dataset}")
+    logger.info("----------------")
+    logger.info("--- finished ---")
+    logger.info("----------------")
+
+    if len(successful_downloads) > 0:
+        logger.info(f"Sucessful datasets ({len(successful_downloads)}/{len(dataset_list)}):")
+        for dataset in successful_downloads: logger.info(f"    {dataset}")
 
     if len(failed_downloads) > 0: 
-        logger.warning("\nFailed datasets:")
-        for dataset in failed_downloads: logger.warning(f"{dataset}")
+        logger.info(f"Failed datasets ({len(failed_downloads)}/{len(dataset_list)}):")
+        for dataset in failed_downloads: logger.info(f"    {dataset}")
 
 main()

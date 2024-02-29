@@ -7,9 +7,9 @@ import sys
 import requests_cache
 import zipfile, io
 from os import path
-import hashlib
 import shutil
 from downloader.Downloader import Downloader
+from utils.utils import md5
 
 class TciaAPI:
     def __init__(self, user=None, pw=None, logger=None, cache_dir=None):
@@ -49,10 +49,10 @@ class TciaAPI:
     
     def generate_tokens(self):
         if not self.password==None:
-            self.logger.info("Requesting token")
+            self.logger.debug("Requesting token")
             token = self.get_token(self.user, self.password)
             token_expires = datetime.now() + timedelta(hours=1, minutes=50)
-            self.logger.info(f"Token expires at {token_expires}")
+            self.logger.debug(f"Token expires at {token_expires}")
         else:
             token = None
             token_expires = datetime.now() + timedelta(weeks=100)
@@ -238,16 +238,20 @@ class TciaAPI:
     
 
 class TciaDownloader(Downloader):
-    def __init__(self, user=None, password=None, temp_dir="", collection=None, logger=None, cache_dir=None) -> None:
-        super(TciaDownloader, self).__init__(collection=collection, logger=logger, temp_dir=os.path.join(temp_dir, collection), cache_dir=cache_dir, user=user, password=password)
-        self.user = user
-        self.password = password
-        self.tcia_api = TciaAPI(user=user, pw=password, logger=logger, cache_dir=cache_dir)
+    def __init__(self, credentials=None, temp_dir="", dataset=None, logger=None, cache_dir=None) -> None:
+        super(TciaDownloader, self).__init__(dataset=dataset, logger=logger, temp_dir=os.path.join(temp_dir, dataset), cache_dir=cache_dir)
+        try:
+            self.user = credentials["TCIA"]["user"]
+            self.password = credentials["TCIA"]["password"]
+        except:
+            self.user = None
+            self.password = None
+        self.tcia_api = TciaAPI(user=self.user, pw=self.password, logger=logger, cache_dir=cache_dir)
         self.series_metadata_df = None
         self.seriesDF = None
 
         # check if collection exists
-        self.tcia_api.check_collection(self.collection)
+        self.tcia_api.check_collection(self.dataset)
     
     
     def convert_StudyInstance_path(self, root_path, SeriesUID):  
@@ -310,14 +314,6 @@ class TciaDownloader(Downloader):
                     
 
 
-
-    def md5(self, fname):
-        hash_md5 = hashlib.md5()
-        with open(fname, "rb") as f:
-            for chunk in iter(lambda: f.read(4096), b""):
-                hash_md5.update(chunk)
-        return hash_md5.hexdigest()
-
     def query_md5_series(self, series_df):
         SeriesInstanceUID = series_df["SeriesInstanceUID"].values
         assert(len(SeriesInstanceUID) == 1)
@@ -357,7 +353,7 @@ class TciaDownloader(Downloader):
                     md5_dict["SeriesInstanceUID"].append(SeriesInstanceUID)
                         
                     file_path = os.path.join(root, file)
-                    md5_dict["md5"].append(self.md5(file_path))
+                    md5_dict["md5"].append(md5(file_path))
                     
                 if file.endswith("md5hashes.csv"):
                     real_md5_df = pd.read_csv(os.path.join(root, file))
@@ -466,7 +462,7 @@ class TciaDownloader(Downloader):
         os.makedirs(self.temp_dir, exist_ok=True)
         
         # Get series from tcia api as dataframe
-        self.seriesDF = self.tcia_api.getSeriesDF(self.collection)
+        self.seriesDF = self.tcia_api.getSeriesDF(self.dataset)
         
         # Download metadata
         self.download_series_metadata(csv_filename=path.join(self.temp_dir, "metadata.csv"))

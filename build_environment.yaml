@@ -1,0 +1,19 @@
+name: URT
+channels:
+  - conda-forge
+  - defaults
+  - bioconda
+dependencies:
+  - dcm2niix
+  - pigz
+  - pip
+  - python=3.12.2
+  - pyyaml
+  - requests
+  - requests-cache
+  - synapseclient=4.1.0
+  - checksumdir
+  - ruby=3.2.2
+  - compilers
+  - pip:
+      - bidscoin==4.3.0

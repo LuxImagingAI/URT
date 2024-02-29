@@ -1,0 +1,6 @@
+config/my_credentials.yaml
+cache
+output
+temp
+downloader/__pycache__
+utils/__pycache__

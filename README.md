@@ -35,14 +35,23 @@ Currently it supports Synapse, TCIA and OpenNeuro as sources but the tool is bui
     - [Removed](#removed)
 
 # Prerequisites
-It is strongly suggested to use URT with docker or singularity to avoid dependency conflicts. This also reduces the amount of prerequisites. Nevertheless the tool can be used without container software as well.
+**It is strongly suggested to use URT with docker or singularity to avoid dependency conflicts.** This also reduces the amount of prerequisites. Nevertheless the tool can be used without container software as well.
 
 ## Basic
-For the basic usage it is highly recommended to use conda or mamba for managing the environment. 
+For the basic usage it is highly recommended to use conda or mamba for managing the environment. The tool officially supports Linux, but other distributions like MacOS or Windows (with WSL) might work as well. 
 
 - Conda or Mamba
 - OPTIONAL: aws cli (required for downloads from OpenNeuro)
 - OPTIONAL: aspera-cli (required for downloads from TCIA which are stored as NIFTI)
+
+First download the URT repo
+```bash
+git clone https://github.com/LuxImagingAI/URT.git
+```
+and navigate to the URT directory:
+```bash
+cd URT
+```
 The environment.yaml file can be used to automatically set up an evironment with all the required dependencies, this avoids dependency conflicts. Use 
 ```bash
 conda env create -f environment.yaml
@@ -80,7 +89,7 @@ Default: "./output"
 `--temp_dir`:
 The directory where the data is stored temporarily, i.e. during the download (before compression). Can be useful in situations where not much space is left on the output drive. 
 
-Default: output folder
+Default: "./temp"
 
 `--cache_dir`:
 Directory which is used for the output of the logs and the http cache. 
@@ -105,7 +114,7 @@ Default: False
 ## Basic
 The following command will start URT with the given arguments.
 ```bash
-python downloader.py --collection COLLECTION [--output_dir OUTPUT_DIR] [--temp_dir TEMP_DIR] [--cache_dir CACHE_DIR] [--credentials CREDENTIALS_FILE] [--bids] [--compress]
+python downloader.py --dataset DATASET [--output_dir OUTPUT_DIR] [--temp_dir TEMP_DIR] [--cache_dir CACHE_DIR] [--credentials CREDENTIALS_FILE] [--bids] [--compress]
 ```
 URT will choose the appropriate downloader for the given collection (based on datasets/datasets.yaml). If the collection cannot be found it will fall back to downloading via the nbia REST API (TCIA) and attempt a download of the collection. BIDS conversion is not possible in this case.
 
@@ -122,7 +131,7 @@ By using docker you can avoid the installation of any dependencies and achieve h
 
 The container can be started by executing:
 ```Bash
-docker run -v ./output:/URT/output -v ./temp:/URT/temp -v ./cache:/URT/cache [-v ./config:/URT/config] ydkq4eu2vrqc2uuy8x3c/cogmi_downloader:dev --collection COLLECTION [--bids] [--compress]
+docker run -v ./output:/URT/output -v ./temp:/URT/temp -v ./cache:/URT/cache [-v ./config:/URT/config] ydkq4eu2vrqc2uuy8x3c/URT:dev --dataset DATASET [--bids] [--compress]
 ```
 In the case of docker the output directory, temporary directory and cache directory can be changed by modifying the mounted volumes in the docker run command. E.g. replacing "./output:/downloader/output" by "~/output:/downloader/output" will move the output folder to the home directory.
 
@@ -146,7 +155,7 @@ The arguments and volumes can be changed in the compose.yaml file.
 Singularity is supported as well. The following command can be used to pull the docker image from dockerhub, convert it to the singularity image format .sif and run it:
 
 ```bash
-singularity run --cleanenv --writable-tmpfs --no-home --bind ./output:/downloader/output --bind ./temp_dir:/downloader/temp_dir --bind ./cache_dir:/downloader/cache_dir [--bind ./config:/URT/config] docker://ydkq4eu2vrqc2uuy8x3c/cogmi_downloader:dev --collection COLLECTION [--bids] [--compress]
+singularity run --cleanenv --writable-tmpfs --no-home --bind ./output:/downloader/output --bind ./temp_dir:/downloader/temp_dir --bind ./cache_dir:/downloader/cache_dir [--bind ./config:/URT/config] docker://ydkq4eu2vrqc2uuy8x3c/URT:dev --dataset DATASET [--bids] [--compress]
 ```
 
 Similar to docker, the output folder can be changed by changing the path of the mounted directories.
@@ -160,7 +169,10 @@ Similar to docker, the output folder can be changed by changing the path of the 
 |Brain-Tumor-Progression|TCIA|TciaDownloader|DICOM|Yes|Limited|
 |UCSF-PDGM|TCIA|AsperaDownloader|NiFTI|No|Open|
 |Burdenko-GBM-Progression|TCIA|TciaDownloader|DICOM|Yes|Limited|
-|Brats-2021|-|Manual|NiFTI|Yes|Limited|
+|Brats-2023-GLI-train|SynapseDownloader|Synapse|NiFTI|Yes|Limited|
+|Brats-2023-GLI-validation|SynapseDownloader|Synapse|NiFTI|Yes|Limited|
+|Brats-2023-SSA-train|SynapseDownloader|Synapse|NiFTI|No|Limited|
+|Brats-2023-SSA-validation|SynapseDownloader|Synapse|NiFTI|No|Limited|
 |BTC_preop|OpenNeuro|AwsDownloader|BIDS|Yes (already in BIDS)|Open|
 |BTC_postop|OpenNeuro|AwsDownloader|BIDS|Yes (already in BIDS)|Open|
 
@@ -209,10 +221,13 @@ Only the last version updates are indicated here. The full changelog can be foun
 
 ### Added
 - Automatic creation of dseg.tsv for supported datasets
-- Support for datasets: Brats-2021, Brain-Tumor-Progression, Burdenko-GBM-Progression, EGD
+- Support for datasets: Brats-2023-GLI, Brats-2023-SSA, Brain-Tumor-Progression, Burdenko-GBM-Progression, EGD
 - Modules: allow arbitrary modifications of the downloaded datasets
 - Credentials file supporting seperate credentials for every downloader
 - Readme.md: additional information about URT, it's architecture, its' usage and supported datasets.
+- Detection for already downloaded and corrupted datasets
+- Automatic detection of compressed and uncompressed datasets: avoids re-downloads e.g. if compressed dataset is available and uncompressed is supposed to be downloaded
+- SynapseDownloader for downloading datasets from Synapse via synapseclient
 <!-- - Automatically removes unwanted Patients from BTC_preop and BTC_postop -->
 
 ### Changed
@@ -224,6 +239,7 @@ Only the last version updates are indicated here. The full changelog can be foun
 - Manual download represented by the "Manual" downloader class instead of "none"
 - Changed format of datasets in datasets.yaml
 - Attempt to move errors to the beginning of the process to avoid disruptions during the download process
+- Download and conversion of multiple datasets more robust
 
 ### Removed
 - Username and password are not given as argument anymore

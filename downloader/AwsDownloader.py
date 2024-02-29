@@ -6,16 +6,22 @@ from downloader.Downloader import Downloader
 
 
 class AwsDownloader(Downloader):
-    def __init__(self, collection, logger, temp_dir, cache_dir, user=None, password=None):
-        super(AwsDownloader, self).__init__(collection=collection, logger=logger, temp_dir=temp_dir, cache_dir=cache_dir, user=user, password=password)
+    def __init__(self, dataset, logger, temp_dir, cache_dir, credentials=None):
+        super(AwsDownloader, self).__init__(dataset=dataset, logger=logger, temp_dir=temp_dir, cache_dir=cache_dir)
+        try:
+            self.user = credentials["user"]
+            self.password = credentials["password"]
+        except:
+            self.user = None
+            self.password = None
 
     
     def run(self):
         with open("datasets/datasets.yaml", "r") as file:
             datasets = yaml.safe_load(file)
 
-        url = datasets[self.collection]["url"]
-        command = ["aws", "s3", "sync", "--no-sign-request", f"s3:{url}", os.path.join(self.temp_dir, self.collection)]
-        self.logger.info(f"Downloading {self.collection} from openneuro via AWS s3")
+        url = datasets[self.dataset]["url"]
+        command = ["aws", "s3", "sync", "--no-sign-request", f"s3:{url}", os.path.join(self.temp_dir, self.dataset)]
+        self.logger.info(f"Downloading {self.dataset} from openneuro via AWS s3")
         run_subprocess(command, logger=self.logger)
         self.logger.info("Done")
