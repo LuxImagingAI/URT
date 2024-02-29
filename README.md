@@ -29,7 +29,7 @@ Currently it supports Synapse, TCIA and OpenNeuro as sources but the tool is bui
   - [Adding Downloaders](#adding-downloaders)
   - [Adding Modules](#adding-modules)
 - [Changelog](#changelog)
-  - [\[2.0.0\] - 2024.02.21](#200---20240221)
+  - [\[2.0.0\] - 2024.02.29](#200---20240229)
     - [Added](#added)
     - [Changed](#changed)
     - [Removed](#removed)
@@ -217,7 +217,7 @@ Examples for modules can be found in the "utils/Modules.py" file.
 # Changelog
 Only the last version updates are indicated here. The full changelog can be found in the CHANGELOG.md.
 
-## [2.0.0] - 2024.02.21
+## [2.0.0] - 2024.02.29
 
 ### Added
 - Automatic creation of dseg.tsv for supported datasets
