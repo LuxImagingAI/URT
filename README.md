@@ -166,15 +166,17 @@ Similar to docker, the output folder can be changed by changing the path of the 
 
 |Name|Source|Downloader|Format|BIDS support|Access|
 |----|------|----------|------|------------|------|
-|Brain-Tumor-Progression|TCIA|TciaDownloader|DICOM|Yes|Limited|
-|UCSF-PDGM|TCIA|AsperaDownloader|NiFTI|No|Open|
+|Brain-Tumor-Progression|TCIA|TciaDownloader|DICOM|No|Limited|
 |Burdenko-GBM-Progression|TCIA|TciaDownloader|DICOM|Yes|Limited|
+|RIDER Neuro MRI|TCIA|TciaDownloader|DICOM|Yes|Limited|
+|UCSF-PDGM|TCIA|AsperaDownloader|NiFTI|No|Open|
 |Brats-2023-GLI-train|SynapseDownloader|Synapse|NiFTI|Yes|Limited|
 |Brats-2023-GLI-validation|SynapseDownloader|Synapse|NiFTI|Yes|Limited|
 |Brats-2023-SSA-train|SynapseDownloader|Synapse|NiFTI|No|Limited|
 |Brats-2023-SSA-validation|SynapseDownloader|Synapse|NiFTI|No|Limited|
 |BTC_preop|OpenNeuro|AwsDownloader|BIDS|Yes (already in BIDS)|Open|
 |BTC_postop|OpenNeuro|AwsDownloader|BIDS|Yes (already in BIDS)|Open|
+
 
 # Accessing restricted datasets
 Some datasets require access permissions from the respective website for the download. If you want to download one of these make sure that you indeed have the permissions to do so and enter your credentials in the credentials.yaml file ("config/credentials.yaml").
