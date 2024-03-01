@@ -40,6 +40,11 @@ Burdenko-GBM-Progression:
     subject-prefix: "Burdenko-GBM-"
     session-prefix: "*"
 
+Brats-2023-GLI:
+  subsets:
+    - Brats-2023-GLI-train
+    - Brats-2023-GLI-validation
+
 Brats-2023-GLI-train:
   format: nifti
   downloader: SynapseDownloader
@@ -68,6 +73,11 @@ Brats-2023-GLI-validation:
       1: GD-enhancing tumor
       2: necrotic and non-enhancing tumor core
 
+Brats-2023-SSA:
+  subsets:
+    - Brats-2023-SSA-train
+    - Brats-2023-SSA-validation
+
 Brats-2023-SSA-train:
   format: nifti
   downloader: SynapseDownloader
@@ -77,3 +87,10 @@ Brats-2023-SSA-validation:
   format: nifti
   downloader: SynapseDownloader
   id: syn52045895
+
+RIDER Neuro MRI: 
+  format: dicom
+  downloader: TciaDownloader
+  bids:
+    subject-prefix: "RIDER Neuro MRI-"
+    session-prefix: "*"
