@@ -7,7 +7,7 @@ dependencies:
   - dcm2niix
   - pigz
   - pip
-  - python=3.12.2
+  - python=3.11.4
   - pyyaml
   - requests
   - requests-cache

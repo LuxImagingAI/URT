@@ -353,8 +353,8 @@ def main():
     datasets_to_remove = []
     for d in dataset_list:
         if d in datasets_file and "subsets" in datasets_file[d]:
-            logger.info(f"Dataset \"{d}\" contains several subsets.")
             datasets_to_remove.append(d)
+            logger.info(f"Dataset \"{d}\" contains several subsets.")
             for s in datasets_file[d]["subsets"]:
                 logger.info(f"Adding subset \"{s}\" to the list.")
                 dataset_list.append(s)
