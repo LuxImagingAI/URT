@@ -164,18 +164,16 @@ Similar to docker, the output folder can be changed by changing the path of the 
 # Supported Datasets
 > **Warning:** Unfortunately some datasets require a registration and access request on the respective website. If you want to download one or several of these datasets make sure that you have access permissions and that your credentials are entered in the credentials.yaml file (as described in [this chapter](#accessing-restricted-datasets))
 
-|Name|Source|Downloader|Format|BIDS support|Access|
-|----|------|----------|------|------------|------|
-|Brain-Tumor-Progression|TCIA|TciaDownloader|DICOM|No|Limited|
-|Burdenko-GBM-Progression|TCIA|TciaDownloader|DICOM|Yes|Limited|
-|RIDER Neuro MRI|TCIA|TciaDownloader|DICOM|Yes|Limited|
-|UCSF-PDGM|TCIA|AsperaDownloader|NiFTI|No|Open|
-|Brats-2023-GLI-train|SynapseDownloader|Synapse|NiFTI|Yes|Limited|
-|Brats-2023-GLI-validation|SynapseDownloader|Synapse|NiFTI|Yes|Limited|
-|Brats-2023-SSA-train|SynapseDownloader|Synapse|NiFTI|No|Limited|
-|Brats-2023-SSA-validation|SynapseDownloader|Synapse|NiFTI|No|Limited|
-|BTC_preop|OpenNeuro|AwsDownloader|BIDS|Yes (already in BIDS)|Open|
-|BTC_postop|OpenNeuro|AwsDownloader|BIDS|Yes (already in BIDS)|Open|
+|Acronym|Name|Source|Downloader|Format|BIDS support|Access|
+|-------|----|------|----------|------|------------|------|
+|BTUP|Brain-Tumor-Progression|TCIA|TciaDownloader|DICOM|No|Limited|
+|BGBM|Burdenko-GBM-Progression|TCIA|TciaDownloader|DICOM|Yes|Limited|
+|RIDN|RIDER Neuro MRI|TCIA|TciaDownloader|DICOM|Yes|Limited|
+|UPDG|UCSF-PDGM|TCIA|AsperaDownloader|NiFTI|No|Open|
+|BRAG|Brats-2023-GLI|SynapseDownloader|Synapse|NiFTI|Yes|Limited|
+|BRSA|Brats-2023-SSA|SynapseDownloader|Synapse|NiFTI|No|Limited|
+|BTC1|BTC_preop|OpenNeuro|AwsDownloader|BIDS|Yes (already in BIDS)|Open|
+|BTC2|BTC_postop|OpenNeuro|AwsDownloader|BIDS|Yes (already in BIDS)|Open|
 
 
 # Accessing restricted datasets

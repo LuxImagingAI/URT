@@ -7,6 +7,7 @@ import yaml
 from utils.utils import run_subprocess, compress, decompress, compute_checksum
 from utils import Modules
 import importlib
+import copy
 
 version="2.0.0"
 
@@ -345,6 +346,26 @@ def main():
     else:
         dataset_list = [datasets]
 
+    with open("datasets/datasets.yaml", "r") as f:
+            datasets_file = yaml.safe_load(f)
+
+    # Detect if dataset is a collection of subsets
+    datasets_to_remove = []
+    for d in dataset_list:
+        if d in datasets_file and "subsets" in datasets_file[d]:
+            logger.info(f"Dataset \"{d}\" contains several subsets.")
+            datasets_to_remove.append(d)
+            for s in datasets_file[d]["subsets"]:
+                logger.info(f"Adding subset \"{s}\" to the list.")
+                dataset_list.append(s)
+    
+    # Remove parent-dataset
+    dataset_set = set(dataset_list)
+    for d in datasets_to_remove:
+        if d in dataset_set:
+            dataset_set.pop()
+    dataset_list = list(dataset_set)
+
     i = 1
     downloader_list = []
     successful_downloads = []
@@ -354,7 +375,7 @@ def main():
         credentials = yaml.safe_load(f)
 
     for dataset in dataset_list:
-        logger.info(f"Starting with dataset no. {i} of {len(dataset_list)}: {dataset}")
+        logger.info(f"Initializing dataset no. {i} of {len(dataset_list)}: {dataset}")
         i += 1
         try:
             downloader = URT(credentials=credentials, root_dir=output, temp_dir=temp_dir, logger=logger, cache_dir=cache_dir, compress=compress, bids=bids, dataset_name=dataset)
@@ -365,7 +386,10 @@ def main():
             # raise e # only for debugging
 
 
+    i = 1
     for downloader in downloader_list:
+        logger.info(f"Downloading dataset no. {i} of {len(dataset_list)}: {dataset}")
+        i += 1
         try:
             downloader.run()
         except Exception as e:

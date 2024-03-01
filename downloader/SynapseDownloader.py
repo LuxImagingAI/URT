@@ -41,11 +41,11 @@ class SynapseDownloader(Downloader):
         
         id = datasets[self.dataset]["id"]
         self.logger.info(f"Downloading {self.dataset} from Synapse")
-
+        
         # Download the data via synapse API
         with contextlib.redirect_stdout(OutputLogger(self.logger)):
-            files = synapseutils.syncFromSynapse(self.syn, id, path=self.temp_dir) 
-        
+            files = synapseutils.syncFromSynapse(self.syn, id, path=self.temp_dir, ifcollision="keep.local") 
+        self.logger.debug("Done")
         # Unpack the data
         file_path = files[0].path
         self.logger.debug("Unpacking dataset from .zip archive")
