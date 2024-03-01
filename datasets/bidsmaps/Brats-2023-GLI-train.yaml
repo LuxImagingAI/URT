@@ -126,6 +126,15 @@ Nibabel:
       ce: UNKNOWN
     meta:
       ContrastBolusIngredient: UNKNOWN
+  - provenance:
+    properties:
+      <<: *fileprop
+      filename: (?i).*(seg).*
+    attributes:
+      <<: *anat_dicomattr
+    bids: 
+      <<: *anat_dicoment_nonparametric
+      suffix: dseg
 
 
 
