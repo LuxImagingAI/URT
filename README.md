@@ -74,12 +74,12 @@ Singularity version 3.8.1 or newer
 # Usage
 ## Arguments
 
-`--collection`: 
-The name of the collection which should be downloaded. 
+`--dataset`: 
+The name of the dataset which should be downloaded. 
 
-Alternatively a .yaml file containing a list of collections for batch-processing of multiple datasets. An example can be seen in "config/collections.yaml".
+Alternatively a .yaml file containing a list of collections for batch-processing of multiple datasets. An example can be seen in "config/datasets.yaml".
 
-A list of type "[COLLECTION_1, COLLECTION_2, ...]" can be given as well.
+A list of type "[DATASET_1, DATASET_1, ...]" can be given as well.
 
 `--output_dir`:
 The output directory for the data. 
