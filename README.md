@@ -22,6 +22,8 @@ Currently it supports Synapse, TCIA and OpenNeuro as sources but the tool is bui
   - [Singularity](#singularity-1)
 - [Supported Datasets](#supported-datasets)
 - [Accessing restricted datasets](#accessing-restricted-datasets)
+  - [TCIA](#tcia)
+  - [Synapse](#synapse)
 - [Architecture Details](#architecture-details)
   - [Adding Datasets](#adding-datasets)
     - [Only for download](#only-for-download)
@@ -94,7 +96,7 @@ Default: "./temp"
 `--cache_dir`:
 Directory which is used for the output of the logs and the http cache. 
 
-Default: "~/.cache/tcia_downloader"
+Default: "~/.cache/URT"
 
 `--credentials`:
 Path to credentials.yaml file containing the credentials. The credentials file is only needed in cases where datasets with limited access are downloaded.
@@ -114,7 +116,7 @@ Default: False
 ## Basic
 The following command will start URT with the given arguments.
 ```bash
-python downloader.py --dataset DATASET [--output_dir OUTPUT_DIR] [--temp_dir TEMP_DIR] [--cache_dir CACHE_DIR] [--credentials CREDENTIALS_FILE] [--bids] [--compress]
+python URT.py --dataset DATASET [--output_dir OUTPUT_DIR] [--temp_dir TEMP_DIR] [--cache_dir CACHE_DIR] [--credentials CREDENTIALS_FILE] [--bids] [--compress]
 ```
 URT will choose the appropriate downloader for the given collection (based on datasets/datasets.yaml). If the collection cannot be found it will fall back to downloading via the nbia REST API (TCIA) and attempt a download of the collection. BIDS conversion is not possible in this case.
 
@@ -181,6 +183,23 @@ Some datasets require access permissions from the respective website for the dow
 
 If you are using docker or singularity you need to mount the folder containing the .yaml file to "/URT/config" inside the container, as shown in the [docker example](#docker-1) and [singularity example](#singularity-1).
 
+OpenNeuro generally does not require any access permissions, while TCIA and Synapse usually do.
+
+## TCIA
+If you want to access restricted datasets form TCIA make sure that you have permissions with your TCIA account. Afterwards enter the credentials to the credentials.yaml file as shown in the example fil:
+```yaml
+TCIA:
+  user: USERNAME
+  password: PASSWORD
+```
+
+## Synapse
+Synapse requires the user to create an access token for accessing restricted datasets through a user account. As with TCIA make sure that you indeed have permissions to access the dataset. Afterwards add the access token to the credentials.yaml file:
+```yaml
+Synapse:
+  token: ACCESS_TOKEN
+```
+Synapse provides instructions for [generating an access token](https://help.synapse.org/docs/Managing-Your-Account.2055405596.html#ManagingYourAccount-PersonalAccessTokens).
 
 # Architecture Details
 ![alt text](images/3488-URT-architecture.png)

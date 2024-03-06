@@ -20,19 +20,6 @@ Brain-Tumor-Progression:
     subject-prefix: "PGBM-"
     session-prefix: "*"
 
-# Brats-2021:
-#   format: nifti
-#   downloader: Manual
-#   bids:
-#     subject-prefix: "BraTS2021_"
-#     session-prefix: "*"
-#   modules:
-#   - name: add_dseg_tsv
-#     data:
-#       0: peritumoral edema
-#       1: GD-enhancing tumor
-#       2: necrotic and non-enhancing tumor core
-
 Burdenko-GBM-Progression:
   format: dicom
   downloader: TciaDownloader
