@@ -58,12 +58,13 @@ class URT:
         with open(self.file_hashes_path, "r") as f:
                 self.file_hashes = yaml.safe_load(f)
 
-        self.logger.debug(f"Check for validity of stored datasets.")
-        try:
-            for key, value in self.file_hashes.items():
-                self.check_path_hash(os.path.join(self.root_dir, key), key)
-        except:
-            pass
+        # Always checking for the integrity of all datasets takes too much time
+        # self.logger.debug(f"Check for validity of stored datasets.")
+        # try:
+        #     for key, value in self.file_hashes.items():
+        #         self.check_path_hash(os.path.join(self.root_dir, key), key)
+        # except:
+        #     pass
 
         
         with open("datasets/datasets.yaml", "r") as f:
@@ -395,7 +396,7 @@ def main():
 
     i = 1
     for downloader in downloader_list:
-        logger.info(f"Downloading dataset no. {i} of {len(dataset_list)}: {dataset}")
+        logger.info(f"Downloading dataset no. {i} of {len(downloader_list)}: {downloader.dataset_name}")
         i += 1
         try:
             downloader.run()
