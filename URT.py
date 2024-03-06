@@ -363,9 +363,10 @@ def main():
     dataset_set = set(dataset_list)
     for d in datasets_to_remove:
         if d in dataset_set:
-            dataset_set.pop()
+            dataset_set.remove(d)
     dataset_list = list(dataset_set)
-
+    logger.debug(f"Datasets to download after removal: {dataset_list}")
+    
     i = 1
     downloader_list = []
     successful_downloads = []
