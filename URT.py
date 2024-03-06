@@ -359,6 +359,12 @@ def main():
                 logger.info(f"Adding subset \"{s}\" to the list.")
                 dataset_list.append(s)
     
+    # Add empty strings to the remove-list
+    for d in dataset_list:
+        if d == "":
+            logger.debug(f"Removing empty string from dataset_list: \"{d}\"")
+            datasets_to_remove.append(d)
+
     # Remove parent-dataset
     dataset_set = set(dataset_list)
     for d in datasets_to_remove:
@@ -366,7 +372,7 @@ def main():
             dataset_set.remove(d)
     dataset_list = list(dataset_set)
     logger.debug(f"Datasets to download after removal: {dataset_list}")
-    
+
     i = 1
     downloader_list = []
     successful_downloads = []
