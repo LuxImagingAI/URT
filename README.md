@@ -44,7 +44,7 @@ For the basic usage it is highly recommended to use conda or mamba for managing 
 
 - Conda or Mamba
 - OPTIONAL: aws cli (required for downloads from OpenNeuro)
-- OPTIONAL: aspera-cli (required for downloads from TCIA which are stored as NIFTI)
+- OPTIONAL: aspera-cli (required for downloads from TCIA which are stored as NIfTI)
 
 First download the URT repo
 ```bash
@@ -64,7 +64,7 @@ to create the environment and activate it via:
 conda activate URT
 ```
 
-The environment contains all required dependencies for downloading datasets from Synapse, DICOM datasets from TCIA and the bids conversion. If datasets from OpenNeuro or NiFTI datasets from TCIA are required then the optional dependencies need to be installed as well. Unfortunately it is not possible to include them in the conda environment. Docker/singularity is the preferred way if you want to avoid installing these dependencies.
+The environment contains all required dependencies for downloading datasets from Synapse, DICOM datasets from TCIA and the bids conversion. If datasets from OpenNeuro or NIfTI datasets from TCIA are required then the optional dependencies need to be installed as well. Unfortunately it is not possible to include them in the conda environment. Docker/singularity is the preferred way if you want to avoid installing these dependencies.
 ## Docker
 Docker version 4.24 or newer
 
@@ -171,9 +171,9 @@ Similar to docker, the output folder can be changed by changing the path of the 
 |BTUP|Brain-Tumor-Progression|TCIA|TciaDownloader|DICOM|No|Limited|
 |BGBM|Burdenko-GBM-Progression|TCIA|TciaDownloader|DICOM|Yes|Limited|
 |RIDN|RIDER Neuro MRI|TCIA|TciaDownloader|DICOM|Yes|Limited|
-|UPDG|UCSF-PDGM|TCIA|AsperaDownloader|NiFTI|No|Open|
-|BRAG|Brats-2023-GLI|SynapseDownloader|Synapse|NiFTI|Yes|Limited|
-|BRSA|Brats-2023-SSA|SynapseDownloader|Synapse|NiFTI|No|Limited|
+|UPDG|UCSF-PDGM|TCIA|AsperaDownloader|NIfTI|No|Open|
+|BRAG|Brats-2023-GLI|SynapseDownloader|Synapse|NIfTI|Yes|Limited|
+|BRSA|Brats-2023-SSA|SynapseDownloader|Synapse|NIfTI|No|Limited|
 |BTC1|BTC_preop|OpenNeuro|AwsDownloader|BIDS|Yes (already in BIDS)|Open|
 |BTC2|BTC_postop|OpenNeuro|AwsDownloader|BIDS|Yes (already in BIDS)|Open|
 
