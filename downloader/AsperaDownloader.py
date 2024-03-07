@@ -23,7 +23,7 @@ class AsperaDownloader(Downloader):
         self.logger.info(f"Downloading {self.dataset} from TCIA with aspera")
 
         try:
-            command = ["ascli", "faspex5", "packages", "receive", f"--username={self.user}", f"--password={self.password}", f"--url={url}", f"--to-folder={self.temp_dir}"]
+            command = ["ascli", "faspex5", "packages", "receive", f"--url={url}", f"--username={self.user}", f"--password={self.password}", f"--to-folder={self.temp_dir}"]
             run_subprocess(command, logger=self.logger)
         except Exception as e:
             # self.logger.error(f"You might need to check your permissions to download this dataset. Error: {e}")

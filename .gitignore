@@ -4,3 +4,4 @@ output
 temp
 downloader/__pycache__
 utils/__pycache__
+downloader/build_environment_test.yaml
