@@ -17,9 +17,10 @@ class AsperaDownloader(Downloader):
                     datasets = yaml.safe_load(file)
 
         url = datasets[self.dataset]["url"]
-        self.logger.info(f"Downloading {self.dataset} from tcia with aspera")
         if self.password == None:
             self.logger.info(f"No credentials given to AsperaDownloader: only download of public datasets possible")
+
+        self.logger.info(f"Downloading {self.dataset} from TCIA with aspera")
 
         try:
             command = ["ascli", "faspex5", "packages", "receive", f"--username={self.user}", f"--password={self.password}", f"--url={url}", f"--to-folder={self.temp_dir}"]
@@ -27,6 +28,6 @@ class AsperaDownloader(Downloader):
         except Exception as e:
             # self.logger.error(f"You might need to check your permissions to download this dataset. Error: {e}")
             # raise e
-            raise Exception("Ascli download failed: You might need to check your permissions to download this dataset.") from e
+            raise Exception("Ascli download failed: either ascli threw an error or you don't have the access permissions for this dataset.") from e
         self.logger.info("Done")
-        
+     

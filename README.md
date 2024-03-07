@@ -79,7 +79,7 @@ Singularity version 3.8.1 or newer
 `--dataset`: 
 The name of the dataset which should be downloaded. 
 
-Alternatively a .yaml file containing a list of collections for batch-processing of multiple datasets. An example can be seen in "config/datasets.yaml".
+Alternatively a .yaml file containing a list of datasets for batch-processing of multiple datasets. An example can be seen in "config/dataset_list.yaml".
 
 A list of type "[DATASET_1, DATASET_1, ...]" can be given as well.
 
@@ -116,7 +116,7 @@ Default: False
 ## Basic
 The following command will start URT with the given arguments.
 ```bash
-python URT.py --dataset DATASET [--output_dir OUTPUT_DIR] [--temp_dir TEMP_DIR] [--cache_dir CACHE_DIR] [--credentials CREDENTIALS_FILE] [--bids] [--compress]
+python3 URT.py --dataset DATASET [--output_dir OUTPUT_DIR] [--temp_dir TEMP_DIR] [--cache_dir CACHE_DIR] [--credentials CREDENTIALS_FILE] [--bids] [--compress]
 ```
 URT will choose the appropriate downloader for the given collection (based on datasets/datasets.yaml). If the collection cannot be found it will fall back to downloading via the nbia REST API (TCIA) and attempt a download of the collection. BIDS conversion is not possible in this case.
 
@@ -259,6 +259,7 @@ Only the last version updates are indicated here. The full changelog can be foun
 - Changed format of datasets in datasets.yaml
 - Attempt to move errors to the beginning of the process to avoid disruptions during the download process
 - Download and conversion of multiple datasets more robust
+- Ruby delivered with conda environment
 
 ### Removed
 - Username and password are not given as argument anymore
