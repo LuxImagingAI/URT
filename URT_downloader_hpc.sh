@@ -6,7 +6,7 @@
 #SBATCH --time=0-36:00:00
 #SBATCH -p batch
 
-conda activate CoGMI_downloader
+conda activate URT
 
 # Name of the collection
 collection="UCSF-PDGM"
@@ -20,11 +20,6 @@ temp_dir=$SCRATCH/temp
 # Cache directory
 cache_dir=$SCRATCH/cache
 
-# Username for TCIA
-user=None
 
-# Password for TCIA
-password=None
-
-python downloader.py --collection "$collection" --output "$output" --temp_dir "$temp_dir" --cache_dir "$cache_dir" --user "$user" --password "$password" --compress #--bids
+python URT.py --collection "$collection" --output "$output" --temp_dir "$temp_dir" --cache_dir "$cache_dir" --compress #--bids
 

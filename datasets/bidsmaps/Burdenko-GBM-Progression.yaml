@@ -14,7 +14,7 @@ DICOM:
       ScanningSequence:
       SequenceName:
       SequenceVariant:
-      SeriesDescription: (T1pre_reg)
+      SeriesDescription: MR00T1
       SliceThickness:
     bids:
       acq: <SeriesDescription>
@@ -50,7 +50,7 @@ DICOM:
       ScanningSequence:
       SequenceName:
       SequenceVariant:
-      SeriesDescription: (FLAIR_reg)
+      SeriesDescription: MR0T2FLAIR
       SliceThickness:
     bids:
       acq: <SeriesDescription>
@@ -86,7 +86,7 @@ DICOM:
       ScanningSequence:
       SequenceName:
       SequenceVariant:
-      SeriesDescription: (T1post)|(dT1)
+      SeriesDescription: MRCET1
       SliceThickness:
     bids:
       acq: <SeriesDescription>
@@ -123,44 +123,7 @@ DICOM:
       ScanningSequence:
       SequenceName:
       SequenceVariant:
-      SeriesDescription: (Mask_Tumor)
-      SliceThickness:
-    bids:
-      acq: <SeriesDescription>
-      ce: UNKNOWN
-      part:
-      - ''
-      - mag
-      - phase
-      - real
-      - imag
-      - 0
-      rec:
-      run: <<1>>
-      suffix: mask
-    meta:
-      ContrastBolusIngredient: UNKNOWN
-    properties:
-      filename:
-      filepath:
-      filesize:
-      nrfiles:
-    provenance:
-  - attributes:
-      EchoNumbers:
-      EchoTime:
-      EffectiveEchoTime:
-      FlipAngle:
-      ImageType:
-      InPlanePhaseEncodingDirection:
-      MRAcquisitionType:
-      Modality:
-      ProtocolName:
-      RepetitionTime:
-      ScanningSequence:
-      SequenceName:
-      SequenceVariant:
-      SeriesDescription: (T2_reg)
+      SeriesDescription: MR00T2
       SliceThickness:
     bids:
       acq: <SeriesDescription>
@@ -182,40 +145,6 @@ DICOM:
       filesize:
       nrfiles:
     provenance:
-  dwi:
-  - attributes:
-      EchoNumbers:
-      EchoTime:
-      EffectiveEchoTime:
-      FlipAngle:
-      ImageType:
-      InPlanePhaseEncodingDirection:
-      MRAcquisitionType:
-      Modality:
-      ProtocolName:
-      RepetitionTime:
-      ScanningSequence:
-      SequenceName:
-      SequenceVariant:
-      SeriesDescription: ADC_reg
-      SliceThickness:
-    bids:
-      acq: <SeriesDescription>
-      dir:
-      part:
-      - ''
-      - mag
-      - phase
-      - real
-      - imag
-      - 0
-      rec:
-      run: <<1>>
-      suffix: dwi
-    meta:
-      B0FieldIdentifier:
-      B0FieldSource:
-    provenance:  
   extra_data:
   - attributes:
       EchoNumbers:
@@ -231,7 +160,7 @@ DICOM:
       ScanningSequence:
       SequenceName:
       SequenceVariant:
-      SeriesDescription: (nCBF_reg)|(nRCBV_reg)|(sRCBV_reg)
+      SeriesDescription: (MR-T2-OR-FLAIR)|(UNKNOWN)|(CT00CT)|(RTSTRUCT)|(RTDOSE)|(RTPLAN)
       SliceThickness:
     bids:
       acq: <SeriesDescription>
