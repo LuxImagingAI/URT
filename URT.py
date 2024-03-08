@@ -55,8 +55,6 @@ class URT:
             with open(self.file_hashes_path, "w") as f:
                 yaml.safe_dump({"placeholder":"placeholder"}, f)
 
-        with open(self.file_hashes_path, "r") as f:
-                self.file_hashes = yaml.safe_load(f)
 
         # Always checking for the integrity of all datasets takes too much time
         # self.logger.debug(f"Check for validity of stored datasets.")
@@ -141,30 +139,42 @@ class URT:
         return True
     
     def add_checksum(self, path, name):
+        with open(self.file_hashes_path, "r") as f:
+            file_hashes = yaml.safe_load(f)
+
         checksum = compute_checksum(path)
-        self.file_hashes[name] = checksum
-        self.logger.debug(f"Added checksum {checksum} for dataset \"{self.dataset_name}\" to checksum file.")
+        file_hashes[name] = checksum
+        self.logger.debug(f"Added checksum {checksum} for dataset \"{name}\" to checksum file.")
+
         with open(self.file_hashes_path, "w") as f:
-            yaml.safe_dump(self.file_hashes, f)
+            yaml.safe_dump(file_hashes, f)
+
         return checksum
     
     def remove_checksum(self, name):
-        if name in self.file_hashes:
-            checksum = self.file_hashes.pop(name)
+        with open(self.file_hashes_path, "r") as f:
+            file_hashes = yaml.safe_load(f)
+
+        if name in file_hashes:
+            
+            checksum = file_hashes.pop(name)
             self.logger.debug(f"Removed checksum {checksum} for dataset \"{self.dataset_name}\" file.")
             with open(self.file_hashes_path, "w") as f:
-                yaml.safe_dump(self.file_hashes, f)
+                yaml.safe_dump(file_hashes, f)
 
 
     # TODO commentary+logging
     def check_for_existing_uncompressed_or_compressed_data(self):
+        with open(self.file_hashes_path, "r") as f:
+            file_hashes = yaml.safe_load(f)
+
         # If target is compressed data and uncompressed data exists
         if self.compress:
             target_path = self.dataset_output_folder_path
             target_name = self.dataset_folder
             self.logger.debug(f"Checking if uncompressed dataset {target_name} is locally available")
 
-            if target_name in self.file_hashes:
+            if target_name in file_hashes:
                 if self.check_path_hash(target_path, target_name):
                     self.logger.info(f"Dataset {target_name} already existing in the output folder in uncompressed format. Compressing ...")
                     compress(output_file=self.dataset_output_name_path, path=self.root_dir, input_directory=target_name, logger=self.logger, remove_files=False)
@@ -176,7 +186,7 @@ class URT:
             target_name = self.dataset_output_name + ".tar.gz"
             self.logger.debug(f"Checking if compressed dataset {target_name} is locally available")
 
-            if target_name in self.file_hashes:
+            if target_name in file_hashes:
                 if self.check_path_hash(target_path, target_name):
                     self.logger.info(f"Dataset {target_name} already existing in the output folder in compressed format. Decompressing ...")
                     decompress(input_file=target_path, output_directory=self.root_dir, logger=self.logger)                
@@ -187,15 +197,17 @@ class URT:
 
     
     def check_path_hash(self, path, name):
+        with open(self.file_hashes_path, "r") as f:
+            file_hashes = yaml.safe_load(f)
 
-        if name in self.file_hashes:
+        if name in file_hashes:
             # If folder does not exists return False (means: not downloaded) and remove the checksum for this dataset from the checksum file
             if not os.path.isdir(path) and not os.path.isfile(path):
                 self.logger.debug(f"Path is not a file or directory: {path}")
                 self.remove_checksum(name)
                 return False
         
-            real_hash = self.file_hashes[name]
+            real_hash = file_hashes[name]
             computed_hash = compute_checksum(path)
 
             if computed_hash == real_hash:

@@ -97,7 +97,7 @@ class SynapseDownloader(Downloader):
         synapse_checksums[self.dataset] = checksum
 
         with open(self.synapse_file_hashes_path, "w") as f:
-                yaml.safe_dump(synapse_checksums, f)
+            yaml.safe_dump(synapse_checksums, f)
     
     def remove_checksum(self):
         with open(self.synapse_file_hashes_path, "r") as f:
