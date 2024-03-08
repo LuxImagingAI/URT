@@ -2,7 +2,7 @@ This changelog follows the Semantic Versioning convention (version 2.0.0)
 
 # Changelog
 
-## [2.0.0] - 2024.02.29
+## [2.0.0] - 2024.03.08
 
 ### Added
 - Automatic creation of dseg.tsv for supported datasets
@@ -25,6 +25,7 @@ This changelog follows the Semantic Versioning convention (version 2.0.0)
 - Changed format of datasets in datasets.yaml
 - Attempt to move errors to the beginning of the process to avoid disruptions during the download process
 - Download and conversion of multiple datasets more robust
+- Ruby delivered with conda environment
 
 ### Removed
 - Username and password are not given as argument anymore
