@@ -382,6 +382,7 @@ def main():
     with open(credentials_file) as f:
         credentials = yaml.safe_load(f)
 
+    logger.info(f"----- Starting Initialization -----")
     for dataset in dataset_list:
         logger.info(f"Initializing dataset no. {i} of {len(dataset_list)}: {dataset}")
         i += 1
@@ -394,6 +395,7 @@ def main():
             # raise e # only for debugging
 
 
+    logger.info(f"----- Starting Download -----")
     i = 1
     for downloader in downloader_list:
         logger.info(f"Downloading dataset no. {i} of {len(downloader_list)}: {downloader.dataset_name}")

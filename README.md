@@ -30,6 +30,7 @@ Currently it supports Synapse, TCIA and OpenNeuro as sources but the tool is bui
     - [For automatic BIDS conversion](#for-automatic-bids-conversion)
   - [Adding Downloaders](#adding-downloaders)
   - [Adding Modules](#adding-modules)
+- [Known Problems](#known-problems)
 - [Changelog](#changelog)
   - [\[2.0.0\] - 2024.02.29](#200---20240229)
     - [Added](#added)
@@ -108,7 +109,7 @@ If this argument is given the dataset(s) will be converted to bids after the dow
 
 Default: False
 
-`--compression`:
+`--compress`:
 If this argument is added the output folder will be automatically compressed.
 
 Default: False
@@ -123,17 +124,12 @@ URT will choose the appropriate downloader for the given collection (based on da
 If datasets from OpenNeuro or TCIA via Aspera are downloaded make sure that the additional dependencies are installed.
 
 ## Docker
-> **Warning:** As long as the project is not published yet the docker image is only available through a private repo on dockerhub. Before running the image you need to login to dockerhub by executing: 
-> ```bash
-> docker login --username raphaelmaser@gmail.com
->```
-> with the password "dckr_pat_2H7B0b4fIYPndw4hl1vXFr72KHs"
 
 By using docker you can avoid the installation of any dependencies and achieve higher reproducibility.
 
 The container can be started by executing:
 ```Bash
-docker run -v ./output:/URT/output -v ./temp:/URT/temp -v ./cache:/URT/cache [-v ./config:/URT/config] ydkq4eu2vrqc2uuy8x3c/URT:dev --dataset DATASET [--bids] [--compress]
+docker run -v ./output:/URT/output -v ./temp:/URT/temp -v ./cache:/URT/cache [-v ./config:/URT/config] ydkq4eu2vrqc2uuy8x3c/urt:latest --dataset DATASET [--bids] [--compress]
 ```
 In the case of docker the output directory, temporary directory and cache directory can be changed by modifying the mounted volumes in the docker run command. E.g. replacing "./output:/downloader/output" by "~/output:/downloader/output" will move the output folder to the home directory.
 
@@ -147,17 +143,11 @@ docker compose up
 The arguments and volumes can be changed in the compose.yaml file.
 
 ## Singularity
-> **Warning:** As long as the project is not published yet the docker image is only available through a private repo on dockerhub. Before running the image you need to set two environment variables for singularity: 
-> ```bash
-> export SINGULARITY_DOCKER_USERNAME=raphaelmaser@gmail.com
->export SINGULARITY_DOCKER_PASSWORD=dckr_pat_2H7B0b4fIYPndw4hl1vXFr72KHs
->
->```
 
 Singularity is supported as well. The following command can be used to pull the docker image from dockerhub, convert it to the singularity image format .sif and run it:
 
 ```bash
-singularity run --cleanenv --writable-tmpfs --no-home --bind ./output:/downloader/output --bind ./temp_dir:/downloader/temp_dir --bind ./cache_dir:/downloader/cache_dir [--bind ./config:/URT/config] docker://ydkq4eu2vrqc2uuy8x3c/URT:dev --dataset DATASET [--bids] [--compress]
+singularity run --cleanenv --writable-tmpfs --no-home --bind ./output:/URT/output --bind ./temp:/URT/temp --bind ./cache:/URT/cache [--bind ./config:/URT/config] docker://ydkq4eu2vrqc2uuy8x3c/urt:latest --dataset DATASET [--bids] [--compress]
 ```
 
 Similar to docker, the output folder can be changed by changing the path of the mounted directories.
@@ -232,6 +222,10 @@ Modules are functions in the "utils/Modules.py" file which can be called by URT 
 Modules are executed by adding the "modules" key to the dataset in the "datasets.yaml" file. "modules" contains a list of modules which are executed in the specified order. Each module is defined by the "name" and "data" key, the "name" key identifies which module is to be executed and the "data" key contains arbitrary data which is given to the module as input.
 
 Examples for modules can be found in the "utils/Modules.py" file.
+
+# Known Problems
+- The synapseclient library sometimes seems to get stuck when run in a docker container 
+
 
 # Changelog
 Only the last version updates are indicated here. The full changelog can be found in the CHANGELOG.md.
