@@ -9,7 +9,7 @@ from utils import Modules
 import importlib
 import copy
 
-version="2.0.0"
+version="2.0.1"
 
 class URT:
     def __init__(self, credentials="config/credentials.yaml", root_dir="", temp_dir="", logger=None, cache_dir=None, compress=None, bids=None, dataset_name=None) -> None:
@@ -75,10 +75,12 @@ class URT:
         # Check if valid bidsmaps are available for the datasets
         format = self.datasets_file[self.dataset_name]["format"]
         if self.bids and format != "bids":
-            if "bids" not in self.datasets_file[self.dataset_name] or not os.path.exists(self.bidsmap_path):
+            if "bids" not in self.datasets_file[self.dataset_name]:
                 # print(f"\"bids\" not in self.datasets_file[self.dataset_name]", "bids" not in self.datasets_file[self.dataset_name])
                 # print(f"not os.path.exists(self.bidsmap_path)", not os.path.exists(self.bidsmap_path))
                 raise Exception("No bids conversion possible: missing data for \"bids\" in datasets.yaml")
+            if not os.path.exists(self.bidsmap_path):
+                raise Exception(f"No bids conversion possible: missing bidsmap for dataset \"{self.dataset_name}\"")
             
         # Get dataset information 
         if self.dataset_name in self.datasets_file and "downloader" in self.datasets_file[self.dataset_name]:
@@ -256,7 +258,7 @@ class URT:
                 run_subprocess(command, logger=self.logger)
 
                 # add dseg file if applicable
-                self.execute_modules()
+                # self.execute_modules()
 
                 shutil.rmtree(dataset_temp_dir)
                 # os.rename(self.dataset_folder, collection_dir)

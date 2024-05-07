@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------------
-# This is a template bidsmap with the key-value mappings for the different BIDS
+# This is a bidsmap YAML file with the key-value mappings for the different BIDS
 # datatypes (anat, func, dwi, etc). The datatype attributes are the keys that map
 # onto the BIDS labels. The bidsmap data-structure should be 5 levels deep:
 #
@@ -7,11 +7,9 @@
 # dataformat : datatype : run-item : bidsmapping : mapping-data
 #
 # NB:
-# 1) This bidsmap is intended to be used by the bidsmapper for data discovery.
-#    Although generally not recommended, it can also be used directly by the bidscoiner
-# 2) This bidsmap is tailored to standard data acquisitions at the Donders Centre for
-#    Cognitive Neuroimaging (DCCN). You may consider (Institute) users may create their
-#    own bidsmap_[template].yaml or bidsmap_[sample].yaml file
+# 1) Edit the bidsmap file to your needs before feeding it to bidscoiner.py
+# 2) (Institute) users may create their own bidsmap_[template].yaml or
+#    bidsmap_[sample].yaml file
 #
 # For more information, see: https://bidscoin.readthedocs.io
 # --------------------------------------------------------------------------------
@@ -22,33 +20,29 @@ Options:
 # General options and plugins
 # --------------------------------------------------------------------------------
   bidscoin:
-    version: 4.0.0                  # BIDScoin version (should correspond with the version in ../bidscoin/version.txt)
+    version: 3.7.4                  # BIDScoin version (should correspond with the version in ../bidscoin/version.txt)
     bidsignore: mrs/;extra_data/    # Semicolon-separated list of entries that are added to the .bidsignore file (for more info, see BIDS specifications), e.g. extra_data/;pet/;myfile.txt;yourfile.csv
     subprefix: sub-                 # The subject prefix of the source data
     sesprefix: ses-                 # The session prefix of the source data
+    datatypes: [fmap, anat, func, perf, dwi, pet, eeg, ieeg]  # A list of datatypes that are converted to BIDS (useful for skipping data)
     unknowntypes: [mrs, extra_data] # A list of datatypes that are converted to BIDS-like datatype folders
     ignoretypes: [exclude]          # A list of datatypes that are excluded / not converted to BIDS
-    unzip:                          # Wildcard pattern to select tarball/zip-files in the source folders that need to be unzipped (in a tempdir) to expose the data, e.g. '*.tar.gz'
   plugins:                          # List of plugins with plugin-specific key-value pairs (that can be used by the plugin)
     dcm2niix2bids:                  # See dcm2niix -h and https://www.nitrc.org/plugins/mwiki/index.php/dcm2nii:MainPage#General_Usage for more info
-      command: dcm2niix             # Command to run dcm2niix, e.g. "module add dcm2niix/1.0.20180622; dcm2niix" or "PATH=/opt/dcm2niix/bin:$PATH; dcm2niix" or /opt/dcm2niix/bin/dcm2niix or 'C:\"Program Files"\dcm2niix\dcm2niix.exe' (use quotes to deal with whitespaces in the path)
-      args: -b y -z y -i n -l n     # Argument string that is passed to dcm2niix. Tip: SPM users may want to use '-z n' (which produces unzipped NIfTI's, see dcm2niix -h for more information)
+      command: dcm2niix             # Command to run dcm2niix, e.g. "module add dcm2niix/1.0.20180622; dcm2niix" or "PATH=/opt/dcm2niix/bin:$PATH; dcm2niix" or /opt/dcm2niix/bin/dcm2niix or '"C:\Program Files\dcm2niix\dcm2niix.exe"' (use quotes to deal with whitespaces in the path)
+      args: -b y -z y -i n -l n     # Argument string that is passed to dcm2niix. Tip: SPM users may want to use '-z n' (which produces unzipped nifti's, see dcm2niix -h for more information)
       anon: y                       # Set this anonymization flag to 'y' to round off age and discard acquisition date from the meta data
       meta: [.json, .tsv, .tsv.gz]  # The file extensions of the equally named metadata sourcefiles that are copied over to the BIDS sidecar files
-#    spec2nii2bids:                  # The settings for the spec2nii2bids plugin
-#      command: spec2nii             # Command to run spec2nii, e.g. "module add spec2nii; spec2nii" or "PATH=/opt/spec2nii/bin:$PATH; spec2nii" or /opt/spec2nii/bin/spec2nii or 'C:\"Program Files"\spec2nii\spec2nii.exe' (note the quotes to deal with the whitespace)
-#      args:                         # Argument string that is passed to spec2nii (see spec2nii -h for more information)
-#      anon: y                       # Set this anonymization flag to 'y' to round off age and discard acquisition date from the meta data
-#      meta: [.json, .tsv, .tsv.gz]  # The file extensions of the equally named metadata sourcefiles that are copied over to the BIDS sidecar files
-#      multiraid: 2                  # The mapVBVD argument for selecting the multiraid Twix file to load (default = 2, i.e. 2nd file)
-#    pet2bids:
-#      command: dcm2niix4pet
-#      args:
-#      anon:
-#      meta: [.json, .tsv]
+    spec2nii2bids:                  # The settings for the spec2nii2bids plugin
+      command: spec2nii             # Command to run spec2nii, e.g. "module add spec2nii; spec2nii" or "PATH=/opt/spec2nii/bin:$PATH; spec2nii" or /opt/spec2nii/bin/spec2nii or '"C:\Program Files\spec2nii\spec2nii.exe"' (note the quotes to deal with the whitespace)
+      args:                         # Argument string that is passed to spec2nii (see spec2nii -h for more information)
+      anon: y                       # Set this anonymization flag to 'y' to round off age and discard acquisition date from the meta data
+      meta: [.json, .tsv, .tsv.gz]  # The file extensions of the equally named metadata sourcefiles that are copied over to the BIDS sidecar files
+      multiraid: 2                  # The mapVBVD argument for selecting the multiraid Twix file to load (default = 2, i.e. 2nd file)
+#    phys2bidscoin:                  # The settings for the phys2bidscoin plugin
 
 
-Nibabel:
+DICOM:
 # --------------------------------------------------------------------------------
 # DICOM key-value heuristics (DICOM fields that are mapped to the BIDS labels)
 # --------------------------------------------------------------------------------
@@ -75,75 +69,65 @@ Nibabel:
       FlipAngle:
       EchoNumbers:
       EchoTime:
-      EffectiveEchoTime:
       RepetitionTime:
-      InPlanePhaseEncodingDirection:
+      PhaseEncodingDirection:
     bids: &anat_dicoment_nonparametric  # See: schema/datatypes/anat.yaml
-      acq: <SeriesDescription>    # This will be expanded by the bidsmapper (so the user can edit it in the bidseditor)
+      acq: <SeriesDescription>    # This will be expanded by the bidsmapper (so the user can edit it)
       ce:
       rec:
-      run: <<1>>                  # This will be updated dynamically during bidscoiner runtime (as it depends on the already existing files)
-      part: ['', mag, phase, real, imag, 0]   # # This BIDS value list will be shown as a dropdown menu in the bidseditor with the first (empty) item selected (as indicated by the last item, i.e. 0)
+      run: <<1>>                  # This will be updated during bidscoiner runtime (as it depends on the already existing files)
+      part: ['', mag, phase, real, imag, 0]
       suffix: T1w
     meta:                         # This is an optional entry for meta-data that will be appended to the json sidecar files produced by dcm2niix
   - provenance:
-    properties:
-      <<: *fileprop
-      filename: (?i).*(t2f).*
     attributes:
       <<: *anat_dicomattr
-      #ScanningSequence: .*'?IR'?.*
-    bids:
-      <<: *anat_dicoment_nonparametric
-      suffix: FLAIR
-  - provenance:
-    properties:
-      <<: *fileprop
-      filename: (?i).*(t2w).*
-    attributes:
-      <<: *anat_dicomattr
+      Series Description: (?i).*(Anatomic).* #(?i).*(T1.*Gad|post.*SPGR|gad.*SPGR|gd.*SPGR).*
     bids: 
       <<: *anat_dicoment_nonparametric
-      suffix: T2w
-  - provenance:
-    properties:
-      <<: *fileprop
-      filename: (?i).*(t1n).*
-    attributes:
-      <<: *anat_dicomattr
-    bids: 
-      <<: *anat_dicoment_nonparametric
-      suffix: T1w
-  - provenance:
-    properties:
-      <<: *fileprop
-      filename: (?i).*(t1c).*
-    attributes:
-      <<: *anat_dicomattr
-    bids: 
-      <<: *anat_dicoment_nonparametric
-      suffix: T1w
       ce: UNKNOWN
+      suffix: T1w
     meta:
       ContrastBolusIngredient: UNKNOWN
   - provenance:
-    properties:
-      <<: *fileprop
-      filename: (?i).*(seg).*
     attributes:
       <<: *anat_dicomattr
-    bids: 
+      Series Description: (?i).*(Mask_Tumor).* #(?i).*(T2.*Gad|post.*FSE|gad.*fse|gd.*fse).*
+    bids:
       <<: *anat_dicoment_nonparametric
-      suffix: dseg
-
-
+      label: tumor
+      suffix: mask
+  - provenance:
+    attributes:
+      <<: *anat_dicomattr
+      Series Description: (?i).*(Mask_Brain).* #(?i).*(T2.*Gad|post.*FSE|gad.*fse|gd.*fse).*
+    bids:
+      <<: *anat_dicoment_nonparametric
+      label: brain
+      suffix: mask
+  - provenance:
+    attributes:
+      <<: *anat_dicomattr
+      Series Description: (?i).*(Mask_NAWM).* #(?i).*(T2.*Gad|post.*FSE|gad.*fse|gd.*fse).*
+    bids:
+      <<: *anat_dicoment_nonparametric
+      label: nawm
+      suffix: mask
+  - provenance:
+    attributes:
+      <<: *anat_dicomattr
+      Series Description: (?i).*(Mask_NACC).* #(?i).*(T2.*Gad|post.*FSE|gad.*fse|gd.*fse).*
+    bids:
+      <<: *anat_dicoment_nonparametric
+      label: nacc
+      suffix: mask
 
   extra_data: # ----------------------- All extra data -------------------------
   - provenance:
     attributes: &extra_data_attributes_dicom
       Modality:
       ProtocolName:
-      SeriesDescription: perfusion
+      SeriesDescription: (?i).*(DSC).*
       ImageType:
       SequenceName:
       SequenceVariant:
@@ -160,11 +144,13 @@ Nibabel:
       acq: <SeriesDescription>
       inv:
       rec:
-      ce:
+      ce: UNKNOWN
       task:
       echo: <EchoNumbers>
       dir:
       run: <<1>>
-      mod: 
+      mod:
       part: ['', mag, phase, real, imag, 0]
-      suffix: <ScanningSequence>
+      suffix: <SeriesDescription>
+    meta: 
+      ContrastBolusIngredient: UNKNOWN

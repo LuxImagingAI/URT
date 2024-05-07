@@ -2,6 +2,16 @@ This changelog follows the Semantic Versioning convention (version 2.0.0)
 
 # Changelog
 
+## [2.0.1] - 2024.05.07
+### Added
+- Bidsmaps for Brain-Tumor-Progression, QIN-Brain-DSC-MRI
+
+### Changed
+- Bidsmap for RIDER NEURO MRI
+- Changed URL for token request of the TCIA downloader (previous URL does not work anymore)
+- Switched to Bidscoin version 4.3.2
+- Perfusion now under "extra_data"
+
 ## [2.0.0] - 2024.03.08
 
 ### Added

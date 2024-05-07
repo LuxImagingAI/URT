@@ -129,51 +129,51 @@ DICOM:
   #     <<: *anat_dicoment_nonparametric
   #     suffix: mask
 
-  perf:       # ----------------------- All perfusion runs ---------------------
-  - provenance:
-    attributes: &perf_dicomattr
-      Modality:
-      ProtocolName:
-      SeriesDescription:
-      ImageType:
-      SequenceName:
-      SequenceVariant:
-      ScanningSequence:
-      MRAcquisitionType:
-      SliceThickness:
-      FlipAngle:
-      EchoNumbers:
-      EchoTime:
-      EffectiveEchoTime:
-      RepetitionTime:
-      InPlanePhaseEncodingDirection:
-    bids: &perf_dicoment_group1         # See: schema/datatypes/perf.yaml
-      acq: <ProtocolName>
-      rec: <SeriesDescription>
-      dir:
-      run: <<1>>
-      suffix: asl
-    meta: &perf_meta
-      ArterialSpinLabelingType: 
-      PostLabelingDelay:
-      BackgroundSuppression:
-      M0Type: 
-      RepetitionTimePreparation:
-      VascularCrushing:
-      AcquisitionVoxelSize:
-      B0FieldSource:
-      B0FieldIdentifier:
-  - provenance:
-    attributes:
-      <<: *perf_dicomattr
-      SeriesDescription: perfusion
-    bids: 
-      <<: *perf_dicoment_group1
-      suffix: dsc
-      ce: UNKNOWN
-    meta: 
-      <<: *perf_meta
-      ContrastBolusIngredient: UNKNOWN
+  # perf:       # ----------------------- All perfusion runs ---------------------
+  # - provenance:
+  #   attributes: &perf_dicomattr
+  #     Modality:
+  #     ProtocolName:
+  #     SeriesDescription:
+  #     ImageType:
+  #     SequenceName:
+  #     SequenceVariant:
+  #     ScanningSequence:
+  #     MRAcquisitionType:
+  #     SliceThickness:
+  #     FlipAngle:
+  #     EchoNumbers:
+  #     EchoTime:
+  #     EffectiveEchoTime:
+  #     RepetitionTime:
+  #     InPlanePhaseEncodingDirection:
+  #   bids: &perf_dicoment_group1         # See: schema/datatypes/perf.yaml
+  #     acq: <ProtocolName>
+  #     rec: <SeriesDescription>
+  #     dir:
+  #     run: <<1>>
+  #     suffix: asl
+  #   meta: &perf_meta
+  #     ArterialSpinLabelingType: 
+  #     PostLabelingDelay:
+  #     BackgroundSuppression:
+  #     M0Type: 
+  #     RepetitionTimePreparation:
+  #     VascularCrushing:
+  #     AcquisitionVoxelSize:
+  #     B0FieldSource:
+  #     B0FieldIdentifier:
+  # - provenance:
+  #   attributes:
+  #     <<: *perf_dicomattr
+  #     SeriesDescription: perfusion
+  #   bids: 
+  #     <<: *perf_dicoment_group1
+  #     suffix: dsc
+  #     ce: UNKNOWN
+  #   meta: 
+  #     <<: *perf_meta
+  #     ContrastBolusIngredient: UNKNOWN
 
       
 
@@ -196,7 +196,7 @@ DICOM:
       RepetitionTime:
       InPlanePhaseEncodingDirection:
     bids: &dwi_dicoment_DWI             # See: schema/datatypes/dwi.yaml
-      acq: <ProtocolName>               # More consistent between SBREF and PHYSIO files
+      acq: <SeriesDescription>             # More consistent between SBREF and PHYSIO files
       rec:
       dir:
       run: <<1>>
@@ -356,14 +356,18 @@ DICOM:
       RepetitionTime:
       InPlanePhaseEncodingDirection:
     bids: &extra_data_bids_dicom
-      acq: <ProtocolName>
+      acq: <SeriesDescription>
       inv:
       rec:
-      ce:
+      ce: UNKNOWN
       task:
       echo: <EchoNumbers>
       dir:
       run: <<1>>
-      mod: <SeriesDescription>
+      mod:
       part: ['', mag, phase, real, imag, 0]
-      suffix: <ScanningSequence>
+      suffix: <SeriesDescription>
+    meta: 
+      ContrastBolusIngredient: UNKNOWN
+  
+  

@@ -1,4 +1,4 @@
-FROM debian:bookworm-20240211
+FROM --platform=linux/amd64 debian:bookworm-20240211
 
 # install apt dependencies
 RUN apt-get update
@@ -13,7 +13,7 @@ RUN curl -L -O "https://github.com/conda-forge/miniforge/releases/download/23.3.
     /mambaforge/bin/mamba init bash
 
 # Mamba setup
-COPY environment.yaml /URT/environment.yaml
+COPY build_environment.yaml /URT/environment.yaml
 RUN mamba env create -f /URT/environment.yaml --quiet
 
 # Install aspera-cli

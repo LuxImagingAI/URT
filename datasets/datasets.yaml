@@ -75,9 +75,16 @@ Brats-2023-SSA-validation:
   downloader: SynapseDownloader
   id: syn52045895
 
-RIDER Neuro MRI: 
+RIDER NEURO MRI: 
   format: dicom
   downloader: TciaDownloader
   bids:
     subject-prefix: "RIDER Neuro MRI-"
+    session-prefix: "*"
+
+QIN-BRAIN-DSC-MRI:
+  format: dicom
+  downloader: TciaDownloader
+  bids:
+    subject-prefix: "QIN-BRAIN-DSC-01-"
     session-prefix: "*"

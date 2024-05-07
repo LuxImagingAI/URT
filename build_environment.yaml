@@ -16,4 +16,4 @@ dependencies:
   - ruby=3.2.2
   - compilers
   - pip:
-      - bidscoin==4.3.0
+      - bidscoin==4.3.2

@@ -5,3 +5,6 @@ temp
 downloader/__pycache__
 utils/__pycache__
 downloader/build_environment_test.yaml
+scripts/wandb
+config_confidential/
+.DS_Store

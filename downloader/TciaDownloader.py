@@ -32,7 +32,9 @@ class TciaAPI:
         return wrapper
 
     def get_token(self, user, pw):
-        token_url = "https://keycloak.dbmi.cloud/auth/realms/TCIA/protocol/openid-connect/token"
+        token_url = "https://services.cancerimagingarchive.net/nbia-api/oauth/token"
+        token_alt = "https://keycloak-stg.dbmi.cloud/auth/realms/TCIA/protocol/openid-connect/token"
+
         params = {'client_id': 'nbia',
                         'scope': 'openid',
                         'grant_type': 'password',
@@ -40,7 +42,16 @@ class TciaAPI:
                         'password': pw
                         }
         
-        data = self.post_request(url=token_url, params=params)
+        try:
+            data = self.post_request(url=token_url, params=params)
+        except:
+            self.logger.warning(f"Token request failed. Trying with alternative URL.")
+            try:
+                data = self.post_request(url=token_alt, params=params)
+            except Exception as e:
+                self.logger.warning("Token request failed with alternative URL.")
+                raise Exception(f"Exception during token creation. Check if your credentials are correct") from e
+            
         access_token = data.json()["access_token"]
         # expires_in = data.json()["expires_in"]
         # id_token = data.json()["id_token"]
@@ -81,8 +92,8 @@ class TciaAPI:
         self.logger.debug(f"Requesting {url}")
         
         
-        for i in range(0, 5):
-            timeout = ((i+5)**2)+20
+        for i in range(0, 1):
+            timeout = ((i+5)**2)
             try:
                 data = self.session.post(url, data=params, timeout=timeout)  
             except Exception as e:
@@ -99,7 +110,7 @@ class TciaAPI:
                     return data
                 
 
-        raise Exception(f"Request failed {10} times for {url}.")
+        raise Exception(f"Request failed {5} times for {url}.")
     
     def get_request(self, url, params={}, use_cache=True, advanced_api=False):
         data = None
@@ -107,7 +118,7 @@ class TciaAPI:
         self.renew_tokens()
         
         for i in range(0, 10):
-            timeout = ((i+5)**2)+20
+            timeout = ((i+5)**2)
             try:
                 if use_cache:
                     data = self.cached_session.get(url = url, headers=self.get_call_headers(), params=params, timeout=timeout)
@@ -116,14 +127,14 @@ class TciaAPI:
             except Exception as e:
                 if isinstance(e, KeyboardInterrupt):
                     sys.exit()
-                self.logger.warning(f"GET request failed for {url} with params {params} after timeout of {timeout} seconds. Retrying...")
+                self.logger.debug(f"GET request failed for {url} with params {params} after timeout of {timeout} seconds. Retrying...")
                 continue
             else:
                 if data.status_code != 200:
-                    self.logger.warning(f"GET request failed for {url} with params {params} and status code {data.status_code}. Waiting for {timeout} seconds and retrying...")
-                    time.sleep(timeout)
+                    self.logger.debug(f"GET request failed for {url} with params {params} and status code {data.status_code}. Waiting for {timeout} seconds and retrying...")
                 else:   
-                    #self.logger.debug(f"GET request successful for {url} with status code {data.status_code}. Answer took {data.elapsed.total_seconds()} seconds.")
+                    if i > 0:
+                        self.logger.debug(f"GET request successful for {url} with status code {data.status_code}. Answer took {data.elapsed.total_seconds()} seconds.")
                     return data
                 
         raise Exception(f"Request failed {10} times for {url}.")

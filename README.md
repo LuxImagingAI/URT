@@ -32,8 +32,10 @@ Currently it supports Synapse, TCIA and OpenNeuro as sources but the tool is bui
   - [Adding Modules](#adding-modules)
 - [Known Problems](#known-problems)
 - [Changelog](#changelog)
-  - [\[2.0.0\] - 2024.03.08](#200---20240308)
+  - [\[2.0.1\] - 2024.04.18](#201---20240418)
     - [Added](#added)
+  - [\[2.0.0\] - 2024.03.08](#200---20240308)
+    - [Added](#added-1)
     - [Changed](#changed)
     - [Removed](#removed)
 
@@ -158,9 +160,10 @@ Similar to docker, the output folder can be changed by changing the path of the 
 
 |Acronym|Name|Source|Downloader|Format|BIDS support|Access|
 |-------|----|------|----------|------|------------|------|
-|BTUP|Brain-Tumor-Progression|TCIA|TciaDownloader|DICOM|No|Limited|
+|BTUP|Brain-Tumor-Progression|TCIA|TciaDownloader|DICOM|Yes|Limited|
 |BGBM|Burdenko-GBM-Progression|TCIA|TciaDownloader|DICOM|Yes|Limited|
 |RIDN|RIDER Neuro MRI|TCIA|TciaDownloader|DICOM|Yes|Limited|
+|QBDM|QIN-BRAIN-DSC-MRI|TCIA|TciaDownloader|DICOM|Yes|Limited|
 |UPDG|UCSF-PDGM|TCIA|AsperaDownloader|NIfTI|No|Open|
 |BRAG|Brats-2023-GLI|SynapseDownloader|Synapse|NIfTI|Yes|Limited|
 |BRSA|Brats-2023-SSA|SynapseDownloader|Synapse|NIfTI|No|Limited|
@@ -229,6 +232,16 @@ Examples for modules can be found in the "utils/Modules.py" file.
 
 # Changelog
 Only the last version updates are indicated here. The full changelog can be found in the CHANGELOG.md.
+
+## [2.0.1] - 2024.05.07
+### Added
+- Bidsmaps for Brain-Tumor-Progression, QIN-Brain-DSC-MRI
+
+### Changed
+- Bidsmap for RIDER NEURO MRI
+- Changed URL for token request of the TCIA downloader (previous URL does not work anymore)
+- Switched to Bidscoin version 4.3.2
+- Perfusion now under "extra_data"
 
 ## [2.0.0] - 2024.03.08
 
