@@ -131,7 +131,7 @@ By using docker you can avoid the installation of any dependencies and achieve h
 
 The container can be started by executing:
 ```Bash
-docker run -v ./output:/URT/output -v ./temp:/URT/temp -v ./cache:/URT/cache [-v ./config:/URT/config] imagingai/urt:latest --dataset DATASET [--bids] [--compress]
+docker run -v ./output:/URT/output -v ./temp:/URT/temp -v ./cache:/URT/cache [-v ./config:/URT/config] imagingai/urt:main --dataset DATASET [--bids] [--compress]
 ```
 In the case of docker the output directory, temporary directory and cache directory can be changed by modifying the mounted volumes in the docker run command. E.g. replacing "./output:/downloader/output" by "~/output:/downloader/output" will move the output folder to the home directory.
 
@@ -149,7 +149,7 @@ The arguments and volumes can be changed in the compose.yaml file.
 Singularity is supported as well. The following command can be used to pull the docker image from dockerhub, convert it to the singularity image format .sif and run it:
 
 ```bash
-singularity run --cleanenv --writable-tmpfs --no-home --bind ./output:/URT/output --bind ./temp:/URT/temp --bind ./cache:/URT/cache [--bind ./config:/URT/config] docker://imagingai/urt:latest --dataset DATASET [--bids] [--compress]
+singularity run --cleanenv --writable-tmpfs --no-home --bind ./output:/URT/output --bind ./temp:/URT/temp --bind ./cache:/URT/cache [--bind ./config:/URT/config] docker://imagingai/urt:main --dataset DATASET [--bids] [--compress]
 ```
 
 Similar to docker, the output folder can be changed by changing the path of the mounted directories.
