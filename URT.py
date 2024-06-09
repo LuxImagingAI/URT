@@ -9,7 +9,7 @@ from utils import Modules
 import importlib
 import copy
 
-version="2.0.2"
+version="2.0.3"
 
 class URT:
     def __init__(self, credentials="config/credentials.yaml", root_dir="", temp_dir="", logger=None, cache_dir=None, compress=None, bids=None, dataset_name=None) -> None:

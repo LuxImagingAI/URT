@@ -233,7 +233,7 @@ Examples for modules can be found in the "utils/Modules.py" file.
 # Changelog
 Only the last version updates are indicated here. The full changelog can be found in the CHANGELOG.md.
 
-## [2.0.2] - 2024.06.09
+## [2.0.3] - 2024.06.09
 ### Changed
 - Changed subprocess calls (better error handling)
 - Downgraded to Bidscoin 4.3.0 (4.3.2 causes BIDS conversion of Brats to fail)

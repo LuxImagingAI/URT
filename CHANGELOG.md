@@ -2,7 +2,7 @@ This changelog follows the Semantic Versioning convention (version 2.0.0)
 
 # Changelog
 
-## [2.0.2] - 2024.06.09
+## [2.0.3] - 2024.06.09
 ### Changed
 - Changed subprocess calls (better error handling)
 - Downgraded to Bidscoin 4.3.0 (4.3.2 causes BIDS conversion of Brats to fail)
