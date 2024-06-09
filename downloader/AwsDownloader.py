@@ -21,7 +21,7 @@ class AwsDownloader(Downloader):
             datasets = yaml.safe_load(file)
 
         url = datasets[self.dataset]["url"]
-        command = ["aws", "s3", "sync", "--no-sign-request", f"s3:{url}", os.path.join(self.temp_dir, self.dataset)]
+        command = f"aws s3 sync --no-sign-request s3:{url} {os.path.join(self.temp_dir, self.dataset)}"
         self.logger.info(f"Downloading {self.dataset} from openneuro via AWS s3")
         run_subprocess(command, logger=self.logger)
         self.logger.info("Done")

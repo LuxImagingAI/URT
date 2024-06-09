@@ -8,3 +8,4 @@ downloader/build_environment_test.yaml
 scripts/wandb
 config_confidential/
 .DS_Store
+URT.code-workspace

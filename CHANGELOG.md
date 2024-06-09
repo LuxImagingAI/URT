@@ -2,6 +2,13 @@ This changelog follows the Semantic Versioning convention (version 2.0.0)
 
 # Changelog
 
+## [2.0.2] - 2024.06.09
+### Changed
+- Changed subprocess calls (better error handling)
+- Downgraded to Bidscoin 4.3.0 (4.3.2 causes BIDS conversion of Brats to fail)
+- Reduced size of docker container (from ~3GB to ~1GB)
+- Password and username are now censored in logfiles
+
 ## [2.0.1] - 2024.05.07
 ### Added
 - Bidsmaps for Brain-Tumor-Progression, QIN-Brain-DSC-MRI

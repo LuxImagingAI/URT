@@ -9,7 +9,7 @@ from utils import Modules
 import importlib
 import copy
 
-version="2.0.1"
+version="2.0.2"
 
 class URT:
     def __init__(self, credentials="config/credentials.yaml", root_dir="", temp_dir="", logger=None, cache_dir=None, compress=None, bids=None, dataset_name=None) -> None:
@@ -55,29 +55,15 @@ class URT:
             with open(self.file_hashes_path, "w") as f:
                 yaml.safe_dump({"placeholder":"placeholder"}, f)
 
-
-        # Always checking for the integrity of all datasets takes too much time
-        # self.logger.debug(f"Check for validity of stored datasets.")
-        # try:
-        #     for key, value in self.file_hashes.items():
-        #         self.check_path_hash(os.path.join(self.root_dir, key), key)
-        # except:
-        #     pass
-
         
         with open("datasets/datasets.yaml", "r") as f:
             self.datasets_file = yaml.safe_load(f)
 
-        # if self.bids:
-        #     if self.compress:
-        #         self.dataset_output_name = self.dataset_name
                 
         # Check if valid bidsmaps are available for the datasets
         format = self.datasets_file[self.dataset_name]["format"]
         if self.bids and format != "bids":
             if "bids" not in self.datasets_file[self.dataset_name]:
-                # print(f"\"bids\" not in self.datasets_file[self.dataset_name]", "bids" not in self.datasets_file[self.dataset_name])
-                # print(f"not os.path.exists(self.bidsmap_path)", not os.path.exists(self.bidsmap_path))
                 raise Exception("No bids conversion possible: missing data for \"bids\" in datasets.yaml")
             if not os.path.exists(self.bidsmap_path):
                 raise Exception(f"No bids conversion possible: missing bidsmap for dataset \"{self.dataset_name}\"")
@@ -249,19 +235,15 @@ class URT:
 
                 # Use bidsmapper
                 self.logger.info("Starting bidsmapper")
-                command = ["bidsmapper", "-f", "-a", "-n", subject_prefix, "-m", session_prefix, dataset_temp_dir, dataset_temp_dir_bids, "-t", self.bidsmap_path, "-p", plugin]
+                command = f"bidsmapper -f -a -n \"{subject_prefix}\" -m \"{session_prefix}\" \"{dataset_temp_dir}\" \"{dataset_temp_dir_bids}\" -t \"{self.bidsmap_path}\" -p \"{plugin}\""
                 run_subprocess(command, logger=self.logger)
 
                 # Use bidscoiner
                 self.logger.info("Starting bidscoiner")
-                command = ["bidscoiner", "-f", dataset_temp_dir, dataset_temp_dir_bids]
+                command = f"bidscoiner -f \"{dataset_temp_dir}\" \"{dataset_temp_dir_bids}\""
                 run_subprocess(command, logger=self.logger)
 
-                # add dseg file if applicable
-                # self.execute_modules()
-
                 shutil.rmtree(dataset_temp_dir)
-                # os.rename(self.dataset_folder, collection_dir)
                 self.logger.info("Bids conversion finished")
                 return
     
@@ -404,7 +386,7 @@ def main():
             downloader = URT(credentials=credentials, root_dir=output, temp_dir=temp_dir, logger=logger, cache_dir=cache_dir, compress=compress, bids=bids, dataset_name=dataset)
             downloader_list.append(downloader)
         except Exception as e:
-            logger.warning(f"Dataset \"{dataset}\" cannot be downloaded: {e}")
+            logger.exception(f"Dataset \"{dataset}\" cannot be downloaded: {e}")
             failed_downloads.append(dataset)
             # raise e # only for debugging
 
@@ -417,7 +399,7 @@ def main():
         try:
             downloader.run()
         except Exception as e:
-            logger.error(f"An error occurred during download of collections {downloader.dataset_name}: {e}")
+            logger.exception(f"An error occurred during download of collections {downloader.dataset_name}: {e}")
             failed_downloads.append(downloader.dataset_name)
             # raise e # only for debugging
         else:

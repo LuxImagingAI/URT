@@ -5,8 +5,8 @@ on:
     branches:
       - "main"
       - "development"
-    tags:
-      - '*'
+  release:
+    types: [published]
 
 jobs:
   build:
