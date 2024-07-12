@@ -187,7 +187,7 @@ TCIA:
 ```
 
 ## Synapse
-Synapse requires the user to create an access token for accessing restricted datasets through a user account. As with TCIA make sure that you indeed have permissions to access the dataset. Afterwards add the access token to the credentials.yaml file:
+Synapse requires the user to create an access token for accessing restricted datasets through a user account. As with TCIA make sure that you indeed have permissions to access the dataset. Create a personal access token by logging in to Synapse and navigting to *Your Account / Account Settings / Personal Access Token / Manage Personal Access Tokens*. Afterwards add the access token to the credentials.yaml file:
 ```yaml
 Synapse:
   token: ACCESS_TOKEN
