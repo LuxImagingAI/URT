@@ -1,3 +1,0 @@
-#!/bin/bash
-URT_DIR=$( dirname -- "$( readlink -f -- "$0"; )"; )
-python3 $URT_DIR/../URT.py "$@" 
