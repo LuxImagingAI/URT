@@ -4,17 +4,18 @@ from datetime import datetime
 import shutil
 import logging
 import yaml
-from utils.utils import run_subprocess, compress, decompress, compute_checksum
+from utils.utils import run_subprocess, compress, decompress, compute_checksum, exists_credentials_file, create_credentials_file
 from utils import Modules
 import importlib
 import copy
 
-version="2.0.3"
+version="2.0.4"
 
 class URT:
-    def __init__(self, credentials="config/credentials.yaml", root_dir="", temp_dir="", logger=None, cache_dir=None, compress=None, bids=None, dataset_name=None) -> None:
+    def __init__(self, credentials_file="config/credentials.yaml", root_dir="", temp_dir="", logger=None, cache_dir=None, compress=None, bids=None, dataset_name=None) -> None:
         self.logger = logger
         self.root_dir = root_dir
+        self.PATH_TO_URT_FOLDER = os.path.dirname(os.path.realpath(__file__))
         self.temp_dir = temp_dir
         self.cache_dir = cache_dir
         self.compress = compress
@@ -41,8 +42,17 @@ class URT:
         # self.output_file_bids = path.join(self.root_dir, f"{self.dataset_name}_BIDS.tar.gz")
 
         self.bidsmap_path = os.path.join("datasets", "bidsmaps", f"{self.dataset_name}.yaml")
+        if not os.path.isabs(self.bidsmap_path): self.bidsmap_path = os.path.join(self.PATH_TO_URT_FOLDER, self.bidsmap_path)
+
         self.file_hashes_path = os.path.join(self.root_dir, ".file_hashes.yaml")
-        self.credentials = credentials
+        if not os.path.isabs(self.file_hashes_path): self.file_hashes_path = os.path.join(self.PATH_TO_URT_FOLDER, self.file_hashes_path)
+
+        self.credentials_file = credentials_file
+        if not os.path.isabs(self.credentials_file): self.credentials_file = os.path.join(self.PATH_TO_URT_FOLDER, self.credentials_file)
+
+        self.datasets_path = os.path.join("datasets", "datasets.yaml")
+        if not os.path.isabs(self.datasets_path): self.datasets_path = os.path.join(self.PATH_TO_URT_FOLDER, self.datasets_path)
+
         self.instantiate()
 
 
@@ -55,8 +65,10 @@ class URT:
             with open(self.file_hashes_path, "w") as f:
                 yaml.safe_dump({"placeholder":"placeholder"}, f)
 
+        with open(self.credentials_file) as f:
+            self.credentials = yaml.safe_load(f)
         
-        with open("datasets/datasets.yaml", "r") as f:
+        with open(self.datasets_path, "r") as f:
             self.datasets_file = yaml.safe_load(f)
 
                 
@@ -81,7 +93,7 @@ class URT:
         module = importlib.import_module(f"downloader.{self.downloader}")
 
         downloader_obj = getattr(module, self.downloader)
-        self.downloader_instance = downloader_obj(credentials=self.credentials, logger=self.logger, dataset=self.dataset_name, temp_dir=self.temp_dir, cache_dir=self.cache_dir)
+        self.downloader_instance = downloader_obj(credentials=self.credentials, logger=self.logger, dataset=self.dataset_name, temp_dir=self.temp_dir, cache_dir=self.cache_dir, datasets=self.datasets_file)
         return
     
 
@@ -311,12 +323,12 @@ def main():
     compress = args.compress
     verbosity = args.verbosity
     cache_dir = args.cache_dir
-    credentials_file = args.credentials
+    credentials_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), args.credentials)
     log_dir = os.path.join(cache_dir, "logs") 
     os.makedirs(log_dir, exist_ok=True)
     temp_dir = args.output_dir if args.temp_dir == None else args.temp_dir
     bids = args.bids
-    
+
     if temp_dir == output:
         raise Exception("Temporary directory and output directory cannot be the same")
     
@@ -335,6 +347,7 @@ def main():
 
     # If yaml file is given
     if datasets.endswith(".yaml"):
+        datasets = os.path.join(os.path.dirname(os.path.realpath(__file__)), datasets)
         with open(datasets) as f:
             dataset_list = yaml.safe_load(f)
     # If (string-) list is given
@@ -343,8 +356,12 @@ def main():
     else:
         dataset_list = [datasets]
 
-    with open("datasets/datasets.yaml", "r") as f:
-            datasets_file = yaml.safe_load(f)
+    with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "datasets/datasets.yaml"), "r") as f:
+        datasets_file = yaml.safe_load(f)
+
+    if not exists_credentials_file(credentials_file):
+        logger.info(f"No credentials file found. Creating new one.")
+        create_credentials_file(credentials_file)
 
     # Detect if dataset is a collection of subsets
     datasets_to_remove = []
@@ -375,18 +392,15 @@ def main():
     successful_downloads = []
     failed_downloads = []
 
-    with open(credentials_file) as f:
-        credentials = yaml.safe_load(f)
-
     logger.info(f"----- Starting Initialization -----")
     for dataset in dataset_list:
         logger.info(f"Initializing dataset no. {i} of {len(dataset_list)}: {dataset}")
         i += 1
         try:
-            downloader = URT(credentials=credentials, root_dir=output, temp_dir=temp_dir, logger=logger, cache_dir=cache_dir, compress=compress, bids=bids, dataset_name=dataset)
+            downloader = URT(credentials_file=credentials_file, root_dir=output, temp_dir=temp_dir, logger=logger, cache_dir=cache_dir, compress=compress, bids=bids, dataset_name=dataset)
             downloader_list.append(downloader)
         except Exception as e:
-            logger.exception(f"Dataset \"{dataset}\" cannot be downloaded: {e}")
+            logger.exception(f"Dataset \"{dataset}\" cannot be downloaded")
             failed_downloads.append(dataset)
             # raise e # only for debugging
 
@@ -399,7 +413,7 @@ def main():
         try:
             downloader.run()
         except Exception as e:
-            logger.exception(f"An error occurred during download of collections {downloader.dataset_name}: {e}")
+            logger.exception(f"An error occurred during download of collections {downloader.dataset_name}")
             failed_downloads.append(downloader.dataset_name)
             # raise e # only for debugging
         else:

@@ -7,6 +7,8 @@ import signal
 import sys
 from threading import Thread
 import re
+import yaml
+import shutil
 
 def strip_ansi_escape_codes(text):
     # Regular expression to remove ANSI escape codes
@@ -78,3 +80,37 @@ def compute_checksum(path):
     else:
         computed_hash = dirhash(path, "md5")
     return computed_hash
+
+
+def exists_credentials_file(credentials_path):
+    print(credentials_path)
+    try:
+        credentials_path.endswith(".yaml")
+    except:
+        try:
+            credentials_path.endswith(".yml")
+        except:
+            raise Exception("Credentials file must be a .yml or .yaml file")
+    return os.path.isfile(credentials_path)
+
+def create_credentials_file(path):
+
+    credentials = {
+        "TCIA": {
+            "user": "",
+            "password": "",
+        },
+        "Synapse": {
+            "token": "",
+        }
+    }
+
+    # Create credentials file
+    if not os.path.exists(os.path.dirname(path)):
+        os.mkdir(os.path.dirname(path))
+
+    with open(path, "w") as f:
+        yaml.safe_dump(credentials, f)
+
+def exists_command(command):
+    return shutil.which(command) != None

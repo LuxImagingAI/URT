@@ -187,7 +187,7 @@ TCIA:
 ```
 
 ## Synapse
-Synapse requires the user to create an access token for accessing restricted datasets through a user account. As with TCIA make sure that you indeed have permissions to access the dataset. Afterwards add the access token to the credentials.yaml file:
+Synapse requires the user to create an access token for accessing restricted datasets through a user account. As with TCIA make sure that you indeed have permissions to access the dataset. Create a personal access token by logging in to Synapse and navigting to *Your Account / Account Settings / Personal Access Token / Manage Personal Access Tokens*. Afterwards add the access token to the credentials.yaml file:
 ```yaml
 Synapse:
   token: ACCESS_TOKEN
@@ -232,6 +232,15 @@ Examples for modules can be found in the "utils/Modules.py" file.
 
 # Changelog
 Only the last version updates are indicated here. The full changelog can be found in the CHANGELOG.md.
+
+## [2.0.4] - 2024.08.02
+### Added
+- Credentials.yaml is automatically generated if none exists
+- Error reports more concise  
+
+### Changed
+- Fixed error in Dockerfile
+
 
 ## [2.0.3] - 2024.06.09
 ### Changed

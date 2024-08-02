@@ -15,7 +15,8 @@ class TciaAPI:
     def __init__(self, user=None, pw=None, logger=None, cache_dir=None):
         self.cached_session = requests_cache.CachedSession(os.path.join(cache_dir, "http_cache.sqlite"), backend="sqlite", expire_after=timedelta(days=2))
         self.session = requests.Session()
-        self.base_url = "https://services.cancerimagingarchive.net/nbia-api/services/v1/" if pw==None else "https://services.cancerimagingarchive.net/nbia-api/services/v2/"
+        self.priviliged = False if pw==None or pw=="" else True
+        self.base_url = "https://services.cancerimagingarchive.net/nbia-api/services/v1/" if not self.priviliged else "https://services.cancerimagingarchive.net/nbia-api/services/v2/"
         self.advanced_url = "https://services.cancerimagingarchive.net/nbia-api/services/"
         self.logger = logger
         self.token, self.token_expires = None, None
@@ -59,14 +60,15 @@ class TciaAPI:
         return access_token
     
     def generate_tokens(self):
-        if not self.password==None:
+        if not self.priviliged:
+            token = None
+            token_expires = datetime.now() + timedelta(weeks=100)
+        else:
             self.logger.debug("Requesting token")
             token = self.get_token(self.user, self.password)
             token_expires = datetime.now() + timedelta(hours=1, minutes=50)
             self.logger.debug(f"Token expires at {token_expires}")
-        else:
-            token = None
-            token_expires = datetime.now() + timedelta(weeks=100)
+            
         self.token_expires = token_expires
         self.token = token
         return
@@ -151,8 +153,8 @@ class TciaAPI:
         available_collections_list = [i["Collection"] for i in available_collections]
         if not collection_name in available_collections_list:
             available_collections_string = "\n".join(available_collections_list)
-            self.logger.error(f"Collection \"{collection_name}\" not found. Available collections are: \n{available_collections_string}")
-            raise Exception("Collection not found. Either the dataset does not exist or your need to provide credentials to access restricted data on TCIA")
+            # self.logger.error(f"Collection \"{collection_name}\" not found. Available collections are: \n{available_collections_string}")
+            raise Exception(f"Collection \"{collection_name}\" not found. Available collections are: \n{available_collections_string}")
         else:
             self.logger.info(f"Collection \"{collection_name}\" found.")
         
@@ -249,8 +251,8 @@ class TciaAPI:
     
 
 class TciaDownloader(Downloader):
-    def __init__(self, credentials=None, temp_dir="", dataset=None, logger=None, cache_dir=None) -> None:
-        super(TciaDownloader, self).__init__(dataset=dataset, logger=logger, temp_dir=os.path.join(temp_dir, dataset), cache_dir=cache_dir)
+    def __init__(self, credentials=None, temp_dir="", dataset=None, logger=None, cache_dir=None, datasets=None) -> None:
+        super(TciaDownloader, self).__init__(dataset=dataset, logger=logger, temp_dir=os.path.join(temp_dir, dataset), cache_dir=cache_dir, datasets=datasets)
         try:
             self.user = credentials["TCIA"]["user"]
             self.password = credentials["TCIA"]["password"]

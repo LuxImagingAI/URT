@@ -8,8 +8,8 @@ import zipfile
 import os, shutil
 
 class SynapseDownloader(Downloader):
-    def __init__(self, dataset, logger, temp_dir, cache_dir, credentials=None) -> None:
-        super(SynapseDownloader, self).__init__(dataset=dataset, logger=logger, temp_dir=temp_dir, cache_dir=cache_dir)
+    def __init__(self, dataset, logger, temp_dir, cache_dir, datasets, credentials=None) -> None:
+        super(SynapseDownloader, self).__init__(dataset=dataset, logger=logger, temp_dir=temp_dir, cache_dir=cache_dir, datasets=datasets)
         
         self.syn = synapseclient.Synapse(silent=True, cache_root_dir=self.cache_dir)
         self.synapse_file_hashes_path = os.path.join(temp_dir, ".synapse_file_hashes.yaml")
@@ -33,13 +33,10 @@ class SynapseDownloader(Downloader):
     def run(self):
         if self.check_for_downloaded_data(): return
 
-        with open("datasets/datasets.yaml", "r") as file:
-            datasets = yaml.safe_load(file)
-
-        if not "id" in datasets[self.dataset]:
+        if not "id" in self.datasets[self.dataset]:
             raise Exception(f"The dataset {self.dataset} is missing an id in the datasets.yaml file")
         
-        id = datasets[self.dataset]["id"]
+        id = self.datasets[self.dataset]["id"]
         self.logger.info(f"Downloading {self.dataset} from Synapse")
         
         # Download the data via synapse API

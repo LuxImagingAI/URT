@@ -2,6 +2,14 @@ This changelog follows the Semantic Versioning convention (version 2.0.0)
 
 # Changelog
 
+## [2.0.4] - 2024.08.02
+### Added
+- Credentials.yaml is automatically generated if none exists
+- Error reports more concise  
+
+### Changed
+- Fixed error in Dockerfile
+
 ## [2.0.3] - 2024.06.09
 ### Changed
 - Changed subprocess calls (better error handling)
