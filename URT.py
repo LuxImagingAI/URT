@@ -133,7 +133,7 @@ class URT:
             if self.temp_dir != self.root_dir:
                 self.logger.info(f"Moving data to output directory {self.root_dir}")
                 temp_folder = os.path.join(self.temp_dir, self.dataset_folder)
-                shutil.copy(temp_folder, self.root_dir)
+                shutil.copytree(temp_folder, self.root_dir, dirs_exist_ok=True)
                 os.remove(temp_folder)
         self.logger.info("Done")
 
