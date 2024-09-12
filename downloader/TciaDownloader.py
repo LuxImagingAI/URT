@@ -42,7 +42,9 @@ class TciaAPI:
                         'username': user,
                         'password': pw
                         }
-        
+        stripped_user = "***" + user[3:]
+        self.logger.info(f"Requesting token from {token_url} for TCIA using username {stripped_user}.")
+
         try:
             data = self.post_request(url=token_url, params=params)
         except:
@@ -94,18 +96,18 @@ class TciaAPI:
         self.logger.debug(f"Requesting {url}")
         
         
-        for i in range(0, 1):
-            timeout = ((i+5)**2)
+        for i in range(0, 5):
+            timeout = ((i+1)**2)
             try:
                 data = self.session.post(url, data=params, timeout=timeout)  
             except Exception as e:
                 if isinstance(e, KeyboardInterrupt):
                     sys.exit()
-                self.logger.warning(f"POST request failed for {url} after timeout of {timeout} seconds. Retrying...")
+                self.logger.debug(f"POST request failed for {url} after timeout of {timeout} seconds. Retrying...")
                 continue
             else:
                 if data.status_code != 200:
-                    self.logger.warning(f"POST request failed for {url} with status code {data.status_code}. Waiting for {timeout} seconds and retrying...")
+                    self.logger.debug(f"POST request failed for {url} with status code {data.status_code}. Waiting for {timeout} seconds and retrying...")
                     time.sleep(timeout)
                     continue
                 else:
@@ -154,7 +156,7 @@ class TciaAPI:
         if not collection_name in available_collections_list:
             available_collections_string = "\n".join(available_collections_list)
             # self.logger.error(f"Collection \"{collection_name}\" not found. Available collections are: \n{available_collections_string}")
-            raise Exception(f"Collection \"{collection_name}\" not found. Available collections are: \n{available_collections_string}")
+            raise Exception(f"Collection \"{collection_name}\" not found. Available collections are: \n{available_collections_string}. Check if your credentials are correct, this error might be thrown because you don't have access to the requested dataset.")
         else:
             self.logger.info(f"Collection \"{collection_name}\" found.")
         
