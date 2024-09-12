@@ -134,7 +134,7 @@ class URT:
                 self.logger.info(f"Moving data to output directory {self.root_dir}")
                 temp_folder = os.path.join(self.temp_dir, self.dataset_folder)
                 shutil.copytree(temp_folder, self.root_dir, dirs_exist_ok=True)
-                os.remove(temp_folder)
+                shutil.rmtree(temp_folder)
         self.logger.info("Done")
 
         # Add checksum for finished dataset
@@ -236,17 +236,18 @@ class URT:
         if self.bids:
             format = self.datasets_file[self.dataset_name]["format"]
 
+            dataset_temp_dir = os.path.join(self.temp_dir, self.dataset_name) 
+            dataset_temp_dir_bids = os.path.join(self.temp_dir, self.dataset_name+"_BIDS") 
             
             # Convert dataset
             if format == "bids":
                 self.logger.info("Dataset is already in BIDS format. Nothing to do ...")
+                os.rename(dataset_temp_dir, dataset_temp_dir_bids)
             else:
                 # Get relevant data from datasets.yaml and paths
                 session_prefix = self.datasets_file[self.dataset_name]["bids"]["session-prefix"]
                 subject_prefix = self.datasets_file[self.dataset_name]["bids"]["subject-prefix"]
                 
-                dataset_temp_dir = os.path.join(self.temp_dir, self.dataset_name) 
-                dataset_temp_dir_bids = os.path.join(self.temp_dir, self.dataset_name+"_BIDS") 
                 plugin = "dcm2niix2bids" if format=="dicom" else "nibabel2bids"
 
                 # Use bidsmapper
