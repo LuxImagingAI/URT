@@ -169,7 +169,7 @@ DICOM:
       echo: <EchoNumbers>
       inv:
       mod:
-      part:
+      part: ['', mag, phase, real, imag, 0]
       rec:
       run: <<1>>
       suffix: <ScanningSequence>

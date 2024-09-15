@@ -65,12 +65,15 @@ class URT:
             with open(self.file_hashes_path, "w") as f:
                 yaml.safe_dump({"placeholder":"placeholder"}, f)
 
-        with open(self.credentials_file) as f:
-            self.credentials = yaml.safe_load(f)
-        
+        self.logger.info(f"Loading credentials from \"{self.credentials_file}\"")
+        try:
+            with open(self.credentials_file) as f:
+                self.credentials = yaml.safe_load(f)
+        except Exception as e:
+            raise Exception(f"Could not read credentials file: {e}")
         with open(self.datasets_path, "r") as f:
             self.datasets_file = yaml.safe_load(f)
-
+        
                 
         # Check if valid bidsmaps are available for the datasets
         format = self.datasets_file[self.dataset_name]["format"]
@@ -130,7 +133,8 @@ class URT:
             if self.temp_dir != self.root_dir:
                 self.logger.info(f"Moving data to output directory {self.root_dir}")
                 temp_folder = os.path.join(self.temp_dir, self.dataset_folder)
-                shutil.move(temp_folder, self.root_dir)
+                shutil.copytree(temp_folder, self.dataset_output_name_path, dirs_exist_ok=True)
+                shutil.rmtree(temp_folder)
         self.logger.info("Done")
 
         # Add checksum for finished dataset
@@ -232,17 +236,18 @@ class URT:
         if self.bids:
             format = self.datasets_file[self.dataset_name]["format"]
 
+            dataset_temp_dir = os.path.join(self.temp_dir, self.dataset_name) 
+            dataset_temp_dir_bids = os.path.join(self.temp_dir, self.dataset_name+"_BIDS") 
             
             # Convert dataset
             if format == "bids":
                 self.logger.info("Dataset is already in BIDS format. Nothing to do ...")
+                os.rename(dataset_temp_dir, dataset_temp_dir_bids)
             else:
                 # Get relevant data from datasets.yaml and paths
                 session_prefix = self.datasets_file[self.dataset_name]["bids"]["session-prefix"]
                 subject_prefix = self.datasets_file[self.dataset_name]["bids"]["subject-prefix"]
                 
-                dataset_temp_dir = os.path.join(self.temp_dir, self.dataset_name) 
-                dataset_temp_dir_bids = os.path.join(self.temp_dir, self.dataset_name+"_BIDS") 
                 plugin = "dcm2niix2bids" if format=="dicom" else "nibabel2bids"
 
                 # Use bidsmapper
