@@ -233,6 +233,10 @@ Examples for modules can be found in the "utils/Modules.py" file.
 # Changelog
 Only the last version updates are indicated here. The full changelog can be found in the CHANGELOG.md.
 
+## [2.0.5] - 2024.09.15
+### Changed
+- Bugfix: replaced shutil.rename by explicit copy and removal to avoid problems with distributed filesystems
+
 ## [2.0.4] - 2024.08.02
 ### Added
 - Credentials.yaml is automatically generated if none exists

@@ -2,6 +2,10 @@ This changelog follows the Semantic Versioning convention (version 2.0.0)
 
 # Changelog
 
+## [2.0.5] - 2024.09.15
+### Changed
+- Bugfix: replaced shutil.rename by explicit copy and removal to avoid problems with distributed filesystems
+
 ## [2.0.4] - 2024.08.02
 ### Added
 - Credentials.yaml is automatically generated if none exists
